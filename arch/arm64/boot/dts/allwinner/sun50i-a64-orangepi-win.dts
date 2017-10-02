@@ -355,6 +355,17 @@
 	};
 };
 
+&spi1 {
+	status = "okay";
+
+	spidev@0 {
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+		status = "okay";
+	};
+};
+
 /* On debug connector */
 &uart0 {
 	pinctrl-names = "default";
