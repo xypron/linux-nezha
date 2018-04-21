@@ -205,4 +205,12 @@ config MTK_CMDQ_MBOX
 	  mailbox driver. The CMDQ is used to help read/write registers with
 	  critical time limitation, such as updating display configuration
 	  during the vblank.
+
+config SUNXI_MSGBOX
+	bool "Allwinner sunxi Message Box"
+	depends on ARCH_SUNXI
+	help
+	  Mailbox driver for the hardware message box used on Allwinner sunxi
+	  SoCs to communicate with the SCP.
+
 endif
