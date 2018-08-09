@@ -469,7 +469,11 @@ printk(KERN_WARNING "3w-9xxx: ERROR: (0x%02X:0x%04X): %s.\n",a,b,c); \
 #define TW_APACHE_MAX_SGL_LENGTH (sizeof(dma_addr_t) > 4 ? 72 : 109)
 #define TW_ESCALADE_MAX_SGL_LENGTH (sizeof(dma_addr_t) > 4 ? 41 : 62)
 #define TW_PADDING_LENGTH (sizeof(dma_addr_t) > 4 ? 8 : 0)
-#define TW_CPU_TO_SGL(x) (sizeof(dma_addr_t) > 4 ? cpu_to_le64(x) : cpu_to_le32(x))
+#if IS_ENABLED(CONFIG_ARCH_DMA_ADDR_T_64BIT)
+#define TW_CPU_TO_SGL(x) cpu_to_le64(x)
+#else
+#define TW_CPU_TO_SGL(x) cpu_to_le32(x)
+#endif
 
 #pragma pack(1)
 
