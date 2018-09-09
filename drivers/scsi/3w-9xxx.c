@@ -296,6 +296,11 @@ static bool twa_command_mapped(struct scsi_cmnd *scmd)
 	return scsi_sg_count(scmd) > 1 || scsi_bufflen(scmd) > TW_SECTOR_SIZE;
 }
 
+static bool twa_is_passthru(struct scsi_cmnd *scmd)
+{
+	return scmd->cmnd[0] == ATA_12 || scmd->cmnd[0] == ATA_16;
+}
+
 /*
  * Find and reserve a request ID, and initialize the request structure.
  *
@@ -554,6 +559,93 @@ out_unlock:
 }
 
 /*
+ * Initialize a command packet for an ATA passthru command.
+ *
+ * Locking: callers must be holding the lock for this request.
+ */
+static int twa_execute_passthru(struct twa_device *twa_dev, int request_id,
+				struct scsi_cmnd *scmd)
+{
+	struct twa_request *request = &twa_dev->requests[request_id];
+	struct twa_command_packet *packet = request->packet;
+	struct twa_command_pass *cmd = &packet->command_pass;
+	enum dma_data_direction dir = scmd->sc_data_direction;
+	int ret;
+
+	/* Fill out the command packet */
+	memset(packet, 0, sizeof(struct twa_command_packet));
+	packet->header.status.error    = 0;
+	packet->header.status.severity = 0;
+	packet->header.header_size     = sizeof(struct twa_command_header);
+
+	cmd->size       = TW_PASS_COMMAND_SIZE(0);
+	cmd->request_id = request_id;
+	cmd->unit       = scmd->device->id;
+	cmd->status     = 0;
+	cmd->flags      = 0x1; /* from smartmontools */
+
+	if (dir == DMA_NONE) {
+		cmd->opcode__sgl_offset = TW_OPSGL_IN(TW_OP_ATA_PASSTHROUGH, 0);
+		cmd->param              = cpu_to_le16(0x8);
+	} else {
+		/* SGL offset == offsetof(cmd, sgl) / sizeof(u32) */
+		cmd->opcode__sgl_offset = TW_OPSGL_IN(TW_OP_ATA_PASSTHROUGH, 5);
+		cmd->param              = cpu_to_le16(dir == DMA_FROM_DEVICE ? 0xd : 0xf);
+	}
+
+	if (scmd->cmnd[0] == ATA_16) {
+		/* Copy SCSI ATA_16 CDB fields to command packet */
+		cmd->features     = cpu_to_le16(scmd->cmnd[3] << 8 | scmd->cmnd[4]);
+		cmd->sector_count = cpu_to_le16(scmd->cmnd[5] << 8 | scmd->cmnd[6]);
+		cmd->lba_low      = cpu_to_le16(scmd->cmnd[7] << 8 | scmd->cmnd[8]);
+		cmd->lba_mid      = cpu_to_le16(scmd->cmnd[9] << 8 | scmd->cmnd[10]);
+		cmd->lba_high     = cpu_to_le16(scmd->cmnd[11] << 8 | scmd->cmnd[12]);
+		cmd->device       = scmd->cmnd[13];
+		cmd->command      = scmd->cmnd[14];
+	} else {
+		/* Copy SCSI ATA_12 CDB fields to command packet */
+		cmd->features     = cpu_to_le16(scmd->cmnd[3]);
+		cmd->sector_count = cpu_to_le16(scmd->cmnd[4]);
+		cmd->lba_low      = cpu_to_le16(scmd->cmnd[5]);
+		cmd->lba_mid      = cpu_to_le16(scmd->cmnd[6]);
+		cmd->lba_high     = cpu_to_le16(scmd->cmnd[7]);
+		cmd->device       = scmd->cmnd[8];
+		cmd->command      = scmd->cmnd[9];
+	}
+
+	if (twa_command_mapped(scmd)) {
+		struct scatterlist *sg;
+		int count = scsi_dma_map(scmd);
+		int i;
+
+		if (count < 0)
+			return count;
+		scsi_for_each_sg(scmd, sg, count, i) {
+			cmd->sgl[i].address = TW_CPU_TO_SGL(sg_dma_address(sg));
+			cmd->sgl[i].length  = cpu_to_le32(sg_dma_len(sg));
+		}
+		cmd->size = TW_PASS_COMMAND_SIZE(count);
+	} else if (scsi_sg_count(scmd) > 0) {
+		if (scmd->sc_data_direction == DMA_TO_DEVICE ||
+		    scmd->sc_data_direction == DMA_BIDIRECTIONAL) {
+			scsi_sg_copy_to_buffer(scmd, request->buffer,
+					       scsi_bufflen(scmd));
+		}
+		cmd->sgl[0].address = TW_CPU_TO_SGL(request->buffer_dma);
+		cmd->sgl[0].length  = cpu_to_le32(scsi_bufflen(scmd));
+		cmd->size           = TW_PASS_COMMAND_SIZE(1);
+	}
+
+	ret = twa_post_command_packet(twa_dev, request_id);
+
+	/* Failed to give packet to hardware; unmap its DMA */
+	if (ret && twa_command_mapped(scmd))
+		scsi_dma_unmap(scmd);
+
+	return ret;
+}
+
+/*
  * Build a command packet from a SCSI command and post it to the controller.
  *
  * Locking: callers must be holding the lock for this request.
@@ -656,7 +748,8 @@ static int twa_execute_sync_time(struct twa_device *twa_dev, int request_id)
 	packet->header.status.severity = 0;
 	packet->header.header_size     = sizeof(struct twa_command_header);
 
-	cmd->opcode__sgl_offset = TW_OPSGL_IN(TW_OP_SET_PARAM);
+	/* SGL offset == offsetof(cmd, sgl) / sizeof(u32) */
+	cmd->opcode__sgl_offset = TW_OPSGL_IN(TW_OP_SET_PARAM, 2);
 	cmd->request_id         = request_id;
 	cmd->unit__host_id      = 0;
 	cmd->status             = 0;
@@ -665,7 +758,7 @@ static int twa_execute_sync_time(struct twa_device *twa_dev, int request_id)
 
 	cmd->sgl[0].address = TW_CPU_TO_SGL(request->buffer);
 	cmd->sgl[0].length  = cpu_to_le32(TW_SECTOR_SIZE);
-	cmd->size           = TW_COMMAND_SIZE(1);
+	cmd->size           = TW_PARAM_COMMAND_SIZE(1);
 
 	/* Setup the parameter descriptor */
 	param->table_id        = cpu_to_le16(TW_TIMEKEEP_TABLE | 0x8000);
@@ -700,7 +793,10 @@ static int twa_queue(struct Scsi_Host *shost, struct scsi_cmnd *scmd)
 	}
 
 	/* Create and send a command packet for the request */
-	ret = twa_execute_scsi(twa_dev, request_id, scmd);
+	if (twa_is_passthru(scmd))
+		ret = twa_execute_passthru(twa_dev, request_id, scmd);
+	else
+		ret = twa_execute_scsi(twa_dev, request_id, scmd);
 	if (ret) {
 		/* Error: clean up and mark the request as delayed/failed */
 		twa_end_request(twa_dev, request_id);
@@ -1018,7 +1114,7 @@ static void twa_complete_scsi(struct twa_device *twa_dev, int request_id)
 	}
 
 	/* Report underflow or residual bytes for requests with a single sg */
-	if (scsi_sg_count(scmd) <= 1 && !cmd->status) {
+	if (!twa_is_passthru(scmd) && scsi_sg_count(scmd) <= 1 && !cmd->status) {
 		u32 transferred = le32_to_cpu(cmd->sgl[0].length);
 		if (transferred < scmd->underflow)
 			scmd->result |= DID_ERROR << 16;
