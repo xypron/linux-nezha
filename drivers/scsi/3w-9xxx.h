@@ -92,6 +92,7 @@
 #define TW_OP_GET_PARAM				0x12
 #define TW_OP_SET_PARAM				0x13
 #define TW_OP_EXECUTE_SCSI			0x10
+#define TW_OP_ATA_PASSTHROUGH			0x11
 #define TW_OP_DOWNLOAD_FIRMWARE			0x16
 #define TW_OP_RESET				0x1c
 
@@ -231,7 +232,7 @@ enum {
 #define TW_OP_OUT(x) (x & 0x1f)
 
 /* opcode: 5, sgloffset: 3 */
-#define TW_OPSGL_IN(op) ((2 << 5) | (op & 0x1f))
+#define TW_OPSGL_IN(op, sgo) ((sgo << 5) | (op & 0x1f))
 #define TW_SGL_OUT(x) ((x >> 5) & 0x7)
 
 /* severity: 3, reserved: 5 */
@@ -270,7 +271,8 @@ else \
 printk(KERN_WARNING "3w-9xxx: ERROR: (0x%02X:0x%04X): %s.\n",a,b,c); \
 }
 #define TW_MAX_LUNS(srl) (srl < TW_FW_SRL_LUNS_SUPPORTED ? 1 : 16)
-#define TW_COMMAND_SIZE(sgls)		(2 + ((sgls) * (sizeof(struct twa_sgl_entry) / 4))) /* number of 32-bit words including sgl for 7xxx */
+#define TW_PARAM_COMMAND_SIZE(sgls)	(2 + ((sgls) * (sizeof(struct twa_sgl_entry) / 4))) /* number of 32-bit words including sgl for 7xxx */
+#define TW_PASS_COMMAND_SIZE(sgls)	(5 + ((sgls) * (sizeof(struct twa_sgl_entry) / 4))) /* number of 32-bit words including sgl for pass */
 #if IS_ENABLED(CONFIG_ARCH_DMA_ADDR_T_64BIT)
 typedef __le64 twa_dma_addr_t;
 #define TW_CPU_TO_SGL(x)		cpu_to_le64(x)
@@ -278,6 +280,8 @@ typedef __le64 twa_dma_addr_t;
 #define TW_APACHE_PADDING_LENGTH	8 /* Pad entire command structure to multiple of 16 bytes. */
 #define TW_ESCALADE_MAX_SGL_LENGTH	41
 #define TW_ESCALADE_PADDING_LENGTH	12 /* Pad entire command structure to multiple of 16 bytes. */
+#define TW_PASSTHRU_MAX_SGL_LENGTH	40
+#define TW_PASSTHRU_PADDING_LENGTH	12 /* Pad entire command structure to multiple of 16 bytes. */
 #else
 typedef __le32 twa_dma_addr_t;
 #define TW_CPU_TO_SGL(x)		cpu_to_le32(x)
@@ -285,6 +289,8 @@ typedef __le32 twa_dma_addr_t;
 #define TW_APACHE_PADDING_LENGTH	0 /* Pad entire command structure to multiple of 16 bytes. */
 #define TW_ESCALADE_MAX_SGL_LENGTH	62
 #define TW_ESCALADE_PADDING_LENGTH	8 /* Pad entire command structure to multiple of 16 bytes. */
+#define TW_PASSTHRU_MAX_SGL_LENGTH	60 /* from smartmontools */
+#define TW_PASSTHRU_PADDING_LENGTH	20 /* Pad entire command structure to multiple of 16 bytes. */
 #endif
 
 /* AEN string type */
@@ -340,6 +346,26 @@ struct twa_command_init {
 	__le32			result;
 } __packed;
 
+/* Command data for ATA_PASSTHRU command */
+struct twa_command_pass {
+	u8			opcode__sgl_offset;
+	u8			size;
+	u8			request_id;
+	u8			unit;
+	u8			status;
+	u8			flags;
+	__le16			param;
+	__le16			features;
+	__le16			sector_count;
+	__le16			lba_low;
+	__le16			lba_mid;
+	__le16			lba_high;
+	u8			device;
+	u8			command;
+	struct twa_sgl_entry	sgl[TW_PASSTHRU_MAX_SGL_LENGTH];
+	u8			__padding[TW_PASSTHRU_PADDING_LENGTH];
+} __packed;
+
 /* Command data for 7000+ controllers: 512 bytes */
 struct twa_command_7xxx {
 	u8			opcode__sgl_offset;
@@ -371,6 +397,7 @@ struct twa_command_packet {
 	struct twa_command_header	header;
 	union {
 		struct twa_command_init	command_init;
+		struct twa_command_pass	command_pass;
 		struct twa_command_7xxx	command_7xxx;
 		struct twa_command_9xxx	command_9xxx;
 	};
