@@ -75,7 +75,7 @@ static struct ccu_div a83t_ar100_clk = {
 	},
 };
 
-static CLK_FIXED_FACTOR(ahb0_clk, "ahb0", "ar100", 1, 1, 0);
+static CLK_FIXED_FACTOR(ahb0_clk, "ahb0", "ar100", 1, 1, CLK_IS_CRITICAL);
 
 static struct ccu_div apb0_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
@@ -89,22 +89,22 @@ static struct ccu_div apb0_clk = {
 	},
 };
 
-static SUNXI_CCU_M(a83t_apb0_clk, "apb0", "ahb0", 0x0c, 0, 2, 0);
+static SUNXI_CCU_M(a83t_apb0_clk, "apb0", "ahb0", 0x0c, 0, 2, CLK_IS_CRITICAL);
 
 static SUNXI_CCU_GATE(apb0_pio_clk,	"apb0-pio",	"apb0",
-		      0x28, BIT(0), 0);
+		      0x28, BIT(0), CLK_IS_CRITICAL);
 static SUNXI_CCU_GATE(apb0_ir_clk,	"apb0-ir",	"apb0",
 		      0x28, BIT(1), 0);
 static SUNXI_CCU_GATE(apb0_timer_clk,	"apb0-timer",	"apb0",
-		      0x28, BIT(2), 0);
+		      0x28, BIT(2), CLK_IS_CRITICAL);
 static SUNXI_CCU_GATE(apb0_rsb_clk,	"apb0-rsb",	"apb0",
-		      0x28, BIT(3), 0);
+		      0x28, BIT(3), CLK_IGNORE_UNUSED);
 static SUNXI_CCU_GATE(apb0_uart_clk,	"apb0-uart",	"apb0",
-		      0x28, BIT(4), 0);
+		      0x28, BIT(4), CLK_IGNORE_UNUSED);
 static SUNXI_CCU_GATE(apb0_i2c_clk,	"apb0-i2c",	"apb0",
-		      0x28, BIT(6), 0);
+		      0x28, BIT(6), CLK_IGNORE_UNUSED);
 static SUNXI_CCU_GATE(apb0_twd_clk,	"apb0-twd",	"apb0",
-		      0x28, BIT(7), 0);
+		      0x28, BIT(7), CLK_IS_CRITICAL);
 
 static const char * const r_mod0_default_parents[] = { "osc32k", "osc24M" };
 static SUNXI_CCU_MP_WITH_MUX_GATE(ir_clk, "ir",
@@ -113,7 +113,7 @@ static SUNXI_CCU_MP_WITH_MUX_GATE(ir_clk, "ir",
 				  16, 2,	/* P */
 				  24, 2,	/* mux */
 				  BIT(31),	/* gate */
-				  0);
+				  CLK_IGNORE_UNUSED);
 
 static const char *const a83t_r_mod0_parents[] = { "osc16M", "osc24M" };
 static const struct ccu_mux_fixed_prediv a83t_ir_predivs[] = {
