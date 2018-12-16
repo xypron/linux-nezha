@@ -460,5 +460,6 @@ config CPU_LITTLE_ENDIAN
 endchoice
 
 config PPC64_BOOT_WRAPPER
-	def_bool n
-	depends on CPU_LITTLE_ENDIAN
+	bool "64-bit compressed boot wrapper"
+	default n
+	depends on PPC64
