@@ -318,6 +318,16 @@
 			};
 		};
 
+		msgbox: mailbox@803000 {
+			compatible = "allwinner,sun9i-a80-msgbox",
+				     "allwinner,sun6i-a31-msgbox";
+			reg = <0x00803000 0x1000>;
+			clocks = <&ccu CLK_BUS_MSGBOX>;
+			resets = <&ccu RST_BUS_MSGBOX>;
+			interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
+			#mbox-cells = <1>;
+		};
+
 		gmac: ethernet@830000 {
 			compatible = "allwinner,sun7i-a20-gmac";
 			reg = <0x00830000 0x1054>;
