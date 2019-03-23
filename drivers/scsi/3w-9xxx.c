@@ -1141,8 +1141,10 @@ static irqreturn_t twa_interrupt(int irq, void *dev_id)
 	status = readl(twa_dev->base + TW_STATUS_REG);
 
 	/* Check if this is our interrupt, otherwise bail */
-	if (!(status & TW_STATUS_VALID_INTERRUPT))
+	if (!(status & TW_STATUS_VALID_INTERRUPT)) {
+		dev_err_ratelimited(&twa_dev->pdev->dev, "Bad IRQ: 0x%08x\n", status);
 		return IRQ_NONE;
+	}
 
 	/* If we are resetting, bail */
 	if (test_bit(TW_IN_RESET, &twa_dev->flags))
@@ -1924,7 +1926,8 @@ static int twa_probe(struct pci_dev *pdev, const struct pci_device_id *dev_id)
 	}
 
 	/* Enable interrupts on the controller */
-	writel(TW_CONTROL_ENABLE_INTERRUPTS |
+	writel(TW_CONTROL_CLEAR_ATTENTION_INTERRUPT |
+	       TW_CONTROL_ENABLE_INTERRUPTS |
 	       TW_CONTROL_UNMASK_RESPONSE_INTERRUPT,
 	       twa_dev->base + TW_CONTROL_REG);
 
