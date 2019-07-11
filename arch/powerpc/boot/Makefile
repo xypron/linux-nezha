@@ -45,8 +45,8 @@ ifdef CONFIG_CPU_BIG_ENDIAN
 BOOTCFLAGS	+= -mbig-endian
 else
 BOOTCFLAGS	+= -mlittle-endian
-BOOTCFLAGS	+= $(call cc-option,-mabi=elfv2)
 endif
+BOOTCFLAGS	+= $(call cc-option,-mabi=elfv2)
 
 BOOTAFLAGS	:= -D__ASSEMBLY__ $(BOOTCFLAGS) -nostdinc
 

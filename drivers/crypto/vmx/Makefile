@@ -5,7 +5,7 @@ vmx-crypto-objs := vmx.o aesp8-ppc.o ghashp8-ppc.o aes.o aes_cbc.o aes_ctr.o aes
 ifeq ($(CONFIG_CPU_LITTLE_ENDIAN),y)
 TARGET := linux-ppc64le
 else
-TARGET := linux-ppc64
+TARGET := linux-ppc64v2
 endif
 
 quiet_cmd_perl = PERL $@
