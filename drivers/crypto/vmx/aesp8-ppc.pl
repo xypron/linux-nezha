@@ -363,7 +363,6 @@ Lenc_key_abort:
 	.long		0
 	.byte		0,12,0x14,1,0,0,3,0
 	.long		0
-.size	.${prefix}_set_encrypt_key,.-.${prefix}_set_encrypt_key
 
 .globl	.${prefix}_set_decrypt_key
 	$STU		$sp,-$FRAME($sp)
@@ -409,7 +408,6 @@ Ldec_key_abort:
 	.long		0
 	.byte		0,12,4,1,0x80,0,3,0
 	.long		0
-.size	.${prefix}_set_decrypt_key,.-.${prefix}_set_decrypt_key
 ___
 }}}
 #########################################################################
@@ -484,7 +482,6 @@ Loop_${dir}c:
 	.long		0
 	.byte		0,12,0x14,0,0,0,3,0
 	.long		0
-.size	.${prefix}_${dir}crypt,.-.${prefix}_${dir}crypt
 ___
 }
 &gen_block("en");
@@ -1241,7 +1238,6 @@ Lcbc_dec8x_done:
 	.long		0
 	.byte		0,12,0x14,0,0x80,6,6,0
 	.long		0
-.size	.${prefix}_cbc_encrypt,.-.${prefix}_cbc_encrypt
 ___
 }}	}}}
 
@@ -1891,7 +1887,6 @@ Lctr32_enc8x_done:
 	.long		0
 	.byte		0,12,0x14,0,0x80,6,6,0
 	.long		0
-.size	.${prefix}_ctr32_encrypt_blocks,.-.${prefix}_ctr32_encrypt_blocks
 ___
 }}	}}}
 
@@ -2122,7 +2117,6 @@ Lxts_enc_ret:
 	.long		0
 	.byte		0,12,0x04,0,0x80,6,6,0
 	.long		0
-.size	.${prefix}_xts_encrypt,.-.${prefix}_xts_encrypt
 
 .globl	.${prefix}_xts_decrypt
 	mr		$inp,r3				# reassign
@@ -2376,7 +2370,6 @@ Lxts_dec_ret:
 	.long		0
 	.byte		0,12,0x04,0,0x80,6,6,0
 	.long		0
-.size	.${prefix}_xts_decrypt,.-.${prefix}_xts_decrypt
 ___
 #########################################################################
 {{	# Optimized XTS procedures					#
