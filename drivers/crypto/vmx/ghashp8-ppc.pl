@@ -108,7 +108,6 @@ $code=<<___;
 	.long		0
 	.byte		0,12,0x14,0,0,0,2,0
 	.long		0
-.size	.gcm_init_p8,.-.gcm_init_p8
 
 .globl	.gcm_gmult_p8
 	lis		r0,0xfff8
@@ -156,7 +155,6 @@ $code=<<___;
 	.long		0
 	.byte		0,12,0x14,0,0,0,2,0
 	.long		0
-.size	.gcm_gmult_p8,.-.gcm_gmult_p8
 
 .globl	.gcm_ghash_p8
 	lis		r0,0xfff8
@@ -223,7 +221,6 @@ Loop:
 	.long		0
 	.byte		0,12,0x14,0,0,0,4,0
 	.long		0
-.size	.gcm_ghash_p8,.-.gcm_ghash_p8
 
 .asciz  "GHASH for PowerISA 2.07, CRYPTOGAMS by <appro\@openssl.org>"
 .align  2
