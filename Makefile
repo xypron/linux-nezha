@@ -2,8 +2,8 @@
 VERSION = 4
 PATCHLEVEL = 14
 SUBLEVEL = 138
-EXTRAVERSION =
-NAME = Petit Gorille
+EXTRAVERSION = -mc15
+NAME = Nueva Receta
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
