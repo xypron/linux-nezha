@@ -2,8 +2,8 @@
 VERSION = 4
 PATCHLEVEL = 14
 SUBLEVEL = 127
-EXTRAVERSION =
-NAME = Petit Gorille
+EXTRAVERSION = -mc14
+NAME = KAISER und Koenig
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
