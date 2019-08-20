@@ -76,6 +76,30 @@
 		};
 	};
 
+	demo_0 {
+		compatible = "allwinner,sunxi-msgbox-demo";
+		mboxes = <&msgbox 0>, <&msgbox 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	demo_1 {
+		compatible = "allwinner,sunxi-msgbox-demo";
+		mboxes = <&msgbox 2>, <&msgbox 3>;
+		mbox-names = "tx", "rx";
+	};
+
+	demo_2 {
+		compatible = "allwinner,sunxi-msgbox-demo";
+		mboxes = <&msgbox 4>, <&msgbox 5>;
+		mbox-names = "tx", "rx";
+	};
+
+	demo_3 {
+		compatible = "allwinner,sunxi-msgbox-demo";
+		mboxes = <&msgbox 6>, <&msgbox 7>;
+		mbox-names = "tx", "rx";
+	};
+
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
