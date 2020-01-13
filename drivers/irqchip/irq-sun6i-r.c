@@ -3,12 +3,14 @@
 // R_INTC driver for Allwinner A31 and newer SoCs
 //
 
+#include <linux/bitmap.h>
 #include <linux/irq.h>
 #include <linux/irqchip.h>
 #include <linux/irqdomain.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
+#include <linux/syscore_ops.h>
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
@@ -40,9 +42,19 @@
 
 #define SUN6I_NMI_IRQ_BIT		BIT(0)
 
+struct sun6i_r_intc_variant {
+	u32	first_mux_irq;
+	u32	nr_mux_irqs;
+	u32	mux_valid[BITS_TO_U32(SUN6I_NR_MUX_INPUTS)];
+};
+
 static void __iomem *base;
 static irq_hw_number_t nmi_hwirq;
 static u32 nmi_type;
+
+static DECLARE_BITMAP(wake_irq_enabled, SUN6I_NR_IRQS);
+static DECLARE_BITMAP(wake_mux_enabled, SUN6I_NR_MUX_INPUTS);
+static DECLARE_BITMAP(wake_mux_valid, SUN6I_NR_MUX_INPUTS);
 
 static struct irq_chip sun6i_r_intc_edge_chip;
 static struct irq_chip sun6i_r_intc_level_chip;
@@ -126,6 +138,21 @@ static int sun6i_r_intc_irq_set_type(struct irq_data *data, unsigned int type)
 	return irq_chip_set_type_parent(data, type);
 }
 
+static int sun6i_r_intc_irq_set_wake(struct irq_data *data, unsigned int on)
+{
+	unsigned long offset_from_nmi = data->hwirq - nmi_hwirq;
+
+	if (offset_from_nmi < SUN6I_NR_DIRECT_IRQS)
+		assign_bit(offset_from_nmi, wake_irq_enabled, on);
+	else if (test_bit(data->hwirq, wake_mux_valid))
+		assign_bit(data->hwirq, wake_mux_enabled, on);
+	else
+		/* Not wakeup capable. */
+		return -EPERM;
+
+	return 0;
+}
+
 static struct irq_chip sun6i_r_intc_edge_chip = {
 	.name			= "sun6i-r-intc",
 	.irq_mask		= sun6i_r_intc_irq_mask,
@@ -135,6 +162,7 @@ static struct irq_chip sun6i_r_intc_edge_chip = {
 	.irq_set_type		= sun6i_r_intc_irq_set_type,
 	.irq_get_irqchip_state	= irq_chip_get_parent_state,
 	.irq_set_irqchip_state	= irq_chip_set_parent_state,
+	.irq_set_wake		= sun6i_r_intc_irq_set_wake,
 	.irq_set_vcpu_affinity	= irq_chip_set_vcpu_affinity_parent,
 	.flags			= IRQCHIP_SET_TYPE_MASKED,
 };
@@ -148,6 +176,7 @@ static struct irq_chip sun6i_r_intc_level_chip = {
 	.irq_set_type		= sun6i_r_intc_irq_set_type,
 	.irq_get_irqchip_state	= irq_chip_get_parent_state,
 	.irq_set_irqchip_state	= irq_chip_set_parent_state,
+	.irq_set_wake		= sun6i_r_intc_irq_set_wake,
 	.irq_set_vcpu_affinity	= irq_chip_set_vcpu_affinity_parent,
 	.flags			= IRQCHIP_SET_TYPE_MASKED,
 };
@@ -212,6 +241,22 @@ static const struct irq_domain_ops sun6i_r_intc_domain_ops = {
 	.free		= irq_domain_free_irqs_common,
 };
 
+static int sun6i_r_intc_suspend(void)
+{
+	u32 buf[BITS_TO_U32(max(SUN6I_NR_IRQS, SUN6I_NR_MUX_INPUTS))];
+	int i;
+
+	/* Wake IRQs are enabled during system sleep and shutdown. */
+	bitmap_to_arr32(buf, wake_irq_enabled, SUN6I_NR_IRQS);
+	for (i = 0; i < BITS_TO_U32(SUN6I_NR_IRQS); ++i)
+		writel_relaxed(buf[i], base + SUN6I_IRQ_ENABLE(i));
+	bitmap_to_arr32(buf, wake_mux_enabled, SUN6I_NR_MUX_INPUTS);
+	for (i = 0; i < BITS_TO_U32(SUN6I_NR_MUX_INPUTS); ++i)
+		writel_relaxed(buf[i], base + SUN6I_MUX_ENABLE(i));
+
+	return 0;
+}
+
 static void sun6i_r_intc_resume(void)
 {
 	int i;
@@ -222,8 +267,20 @@ static void sun6i_r_intc_resume(void)
 		writel_relaxed(0, base + SUN6I_IRQ_ENABLE(i));
 }
 
+static void sun6i_r_intc_shutdown(void)
+{
+	sun6i_r_intc_suspend();
+}
+
+static struct syscore_ops sun6i_r_intc_syscore_ops = {
+	.suspend	= sun6i_r_intc_suspend,
+	.resume		= sun6i_r_intc_resume,
+	.shutdown	= sun6i_r_intc_shutdown,
+};
+
 static int __init sun6i_r_intc_init(struct device_node *node,
-				    struct device_node *parent)
+				    struct device_node *parent,
+				    const struct sun6i_r_intc_variant *v)
 {
 	struct irq_domain *domain, *parent_domain;
 	struct of_phandle_args parent_irq;
@@ -253,6 +310,9 @@ static int __init sun6i_r_intc_init(struct device_node *node,
 	sun6i_r_intc_nmi_ack();
 	sun6i_r_intc_resume();
 
+	bitmap_set(wake_irq_enabled, v->first_mux_irq, v->nr_mux_irqs);
+	bitmap_from_arr32(wake_mux_valid, v->mux_valid, SUN6I_NR_MUX_INPUTS);
+
 	domain = irq_domain_add_hierarchy(parent_domain, 0,
 					  SUN6I_NR_HWIRQS, node,
 					  &sun6i_r_intc_domain_ops, NULL);
@@ -262,6 +322,45 @@ static int __init sun6i_r_intc_init(struct device_node *node,
 		return -ENOMEM;
 	}
 
+	register_syscore_ops(&sun6i_r_intc_syscore_ops);
+
 	return 0;
 }
-IRQCHIP_DECLARE(sun6i_r_intc, "allwinner,sun6i-a31-r-intc", sun6i_r_intc_init);
+
+static const struct sun6i_r_intc_variant sun6i_a31_r_intc_variant __initconst = {
+	.first_mux_irq	= 19,
+	.nr_mux_irqs	= 13,
+	.mux_valid	= {
+		0xffffffff,
+		0xfff80000,
+		0xffffffff,
+		0x0000000f,
+	},
+};
+
+static int __init sun6i_a31_r_intc_init(struct device_node *node,
+					struct device_node *parent)
+{
+	return sun6i_r_intc_init(node, parent, &sun6i_a31_r_intc_variant);
+}
+IRQCHIP_DECLARE(sun6i_a31_r_intc, "allwinner,sun6i-a31-r-intc",
+		sun6i_a31_r_intc_init);
+
+static const struct sun6i_r_intc_variant sun50i_h6_r_intc_variant __initconst = {
+	.first_mux_irq	= 21,
+	.nr_mux_irqs	= 16,
+	.mux_valid	= {
+		0xffffffff,
+		0xffffffff,
+		0xffffffff,
+		0xffffffff,
+	},
+};
+
+static int __init sun50i_h6_r_intc_init(struct device_node *node,
+					struct device_node *parent)
+{
+	return sun6i_r_intc_init(node, parent, &sun50i_h6_r_intc_variant);
+}
+IRQCHIP_DECLARE(sun50i_h6_r_intc, "allwinner,sun50i-h6-r-intc",
+		sun50i_h6_r_intc_init);
