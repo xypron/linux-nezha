@@ -11,7 +11,6 @@
 
 static int sun50i_de2_bus_probe(struct platform_device *pdev)
 {
-	struct device_node *np = pdev->dev.of_node;
 	int ret;
 
 	ret = sunxi_sram_claim(&pdev->dev);
@@ -20,9 +19,7 @@ static int sun50i_de2_bus_probe(struct platform_device *pdev)
 		return ret;
 	}
 
-	of_platform_populate(np, NULL, NULL, &pdev->dev);
-
-	return 0;
+	return devm_of_platform_populate(&pdev->dev);
 }
 
 static int sun50i_de2_bus_remove(struct platform_device *pdev)
