@@ -18,6 +18,7 @@
 #include <linux/media-bus-format.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/regulator/consumer.h>
 #include <video/display_timing.h>
 #include <video/mipi_display.h>
 
@@ -48,6 +49,8 @@
 struct xbd599 {
 	struct device *dev;
 	struct drm_panel panel;
+	struct regulator *iovcc;
+	struct regulator *power;
 	struct gpio_desc *reset_gpio;
 	bool prepared;
 };
@@ -135,12 +138,12 @@ static int xbd599_init_sequence(struct xbd599 *ctx)
 		DRM_DEV_ERROR(dev, "Failed to exit sleep mode\n");
 		return ret;
 	}
-	msleep(10);
+	msleep(120);
 
 	ret = mipi_dsi_dcs_set_display_on(dsi);
 	if (ret)
 		return ret;
-	msleep(10);
+	msleep(100);
 
 	DRM_DEV_DEBUG_DRIVER(dev, "Panel init sequence done\n");
 	return 0;
@@ -155,6 +158,9 @@ static int xbd599_unprepare(struct drm_panel *panel)
 		return 0;
 
 	mipi_dsi_dcs_set_display_off(dsi);
+	regulator_disable(ctx->power);
+	regulator_disable(ctx->iovcc);
+
 	ctx->prepared = false;
 
 	return 0;
@@ -168,11 +174,20 @@ static int xbd599_prepare(struct drm_panel *panel)
 	if (ctx->prepared)
 		return 0;
 
+	ret = regulator_enable(ctx->iovcc);
+	if (ret)
+		return ret;
+
+	ret = regulator_enable(ctx->power);
+	if (ret)
+		return ret;
+
 	DRM_DEV_DEBUG_DRIVER(ctx->dev, "Resetting the panel\n");
+	msleep(10);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	usleep_range(20, 40);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	msleep(10);
+	msleep(15);
 
 	ret = xbd599_init_sequence(ctx);
 	if (ret < 0) {
@@ -241,6 +256,14 @@ static int xbd599_probe(struct mipi_dsi_device *dsi)
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
+
+	ctx->iovcc = devm_regulator_get(dev, "iovcc");
+	if (IS_ERR(ctx->iovcc))
+		return PTR_ERR(ctx->iovcc);
+
+	ctx->power = devm_regulator_get(dev, "power");
+	if (IS_ERR(ctx->power))
+		return PTR_ERR(ctx->power);
 
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->reset_gpio)) {
