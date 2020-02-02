@@ -604,6 +604,9 @@ static int sun4i_i2s_hw_params(struct snd_pcm_substream *substream,
 			   SUN4I_I2S_FIFO_CTRL_RX_MODE(1));
 
 	switch (params_physical_width(params)) {
+	case 8:
+		width = DMA_SLAVE_BUSWIDTH_1_BYTE;
+		break;
 	case 16:
 		width = DMA_SLAVE_BUSWIDTH_2_BYTES;
 		break;
@@ -1084,7 +1087,8 @@ static int sun4i_i2s_dai_probe(struct snd_soc_dai *dai)
 	return 0;
 }
 
-#define SUN4I_FORMATS	(SNDRV_PCM_FMTBIT_S16_LE | \
+#define SUN4I_FORMATS	(SNDRV_PCM_FMTBIT_S8     | \
+			 SNDRV_PCM_FMTBIT_S16_LE | \
 			 SNDRV_PCM_FMTBIT_S20_LE | \
 			 SNDRV_PCM_FMTBIT_S24_LE)
 
