@@ -14,7 +14,6 @@
 #include <linux/clk.h>
 #include <linux/io.h>
 #include <linux/of_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <linux/log2.h>
 
@@ -162,60 +161,9 @@
 			     SNDRV_PCM_RATE_KNOT)
 
 struct sun8i_codec {
-	struct regmap	*regmap;
 	struct clk	*clk_module;
-	struct clk	*clk_bus;
 	bool		inverted_lrck;
 };
-
-static int sun8i_codec_runtime_resume(struct device *dev)
-{
-	struct sun8i_codec *scodec = dev_get_drvdata(dev);
-	int ret;
-
-	ret = clk_prepare_enable(scodec->clk_module);
-	if (ret) {
-		dev_err(dev, "Failed to enable the module clock\n");
-		return ret;
-	}
-
-	ret = clk_prepare_enable(scodec->clk_bus);
-	if (ret) {
-		dev_err(dev, "Failed to enable the bus clock\n");
-		goto err_disable_modclk;
-	}
-
-	regcache_cache_only(scodec->regmap, false);
-
-	ret = regcache_sync(scodec->regmap);
-	if (ret) {
-		dev_err(dev, "Failed to sync regmap cache\n");
-		goto err_disable_clk;
-	}
-
-	return 0;
-
-err_disable_clk:
-	clk_disable_unprepare(scodec->clk_bus);
-
-err_disable_modclk:
-	clk_disable_unprepare(scodec->clk_module);
-
-	return ret;
-}
-
-static int sun8i_codec_runtime_suspend(struct device *dev)
-{
-	struct sun8i_codec *scodec = dev_get_drvdata(dev);
-
-	regcache_cache_only(scodec->regmap, true);
-	regcache_mark_dirty(scodec->regmap);
-
-	clk_disable_unprepare(scodec->clk_module);
-	clk_disable_unprepare(scodec->clk_bus);
-
-	return 0;
-}
 
 static int sun8i_codec_get_hw_rate(struct snd_pcm_hw_params *params)
 {
@@ -252,7 +200,8 @@ static int sun8i_codec_get_hw_rate(struct snd_pcm_hw_params *params)
 
 static int sun8i_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 {
-	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(dai->component);
+	struct snd_soc_component *component = dai->component;
+	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(component);
 	unsigned int reg = SUN8I_AIF_CLK_CTRL(dai->id);
 	u32 value;
 
@@ -268,7 +217,7 @@ static int sun8i_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 		default:
 			return -EINVAL;
 		}
-		regmap_update_bits(scodec->regmap, reg,
+		regmap_update_bits(component->regmap, reg,
 				   BIT(SUN8I_AIF_CLK_CTRL_MSTR_MOD),
 				   value << SUN8I_AIF_CLK_CTRL_MSTR_MOD);
 	}
@@ -301,7 +250,7 @@ static int sun8i_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 	 * invert the value here.
 	 */
 	value ^= scodec->inverted_lrck;
-	regmap_update_bits(scodec->regmap, reg,
+	regmap_update_bits(component->regmap, reg,
 			   SUN8I_AIF_CLK_CTRL_CLK_INV_MASK,
 			   value << SUN8I_AIF_CLK_CTRL_CLK_INV);
 
@@ -323,7 +272,7 @@ static int sun8i_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 		default:
 			return -EINVAL;
 		}
-		regmap_update_bits(scodec->regmap, reg,
+		regmap_update_bits(component->regmap, reg,
 				   SUN8I_AIF_CLK_CTRL_DATA_FMT_MASK,
 				   value << SUN8I_AIF_CLK_CTRL_DATA_FMT);
 	}
@@ -393,7 +342,8 @@ static int sun8i_codec_hw_params(struct snd_pcm_substream *substream,
 				 struct snd_pcm_hw_params *params,
 				 struct snd_soc_dai *dai)
 {
-	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(dai->component);
+	struct snd_soc_component *component = dai->component;
+	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(component);
 	unsigned int slot_width = params_physical_width(params);
 	unsigned int channels = params_channels(params);
 	unsigned int reg = SUN8I_AIF_CLK_CTRL(dai->id);
@@ -411,7 +361,7 @@ static int sun8i_codec_hw_params(struct snd_pcm_substream *substream,
 	if (dai->id < 3) {
 		bclk_div = sun8i_codec_get_bclk_div(scodec, params_rate(params),
 						    channels, slot_width);
-		regmap_update_bits(scodec->regmap, reg,
+		regmap_update_bits(component->regmap, reg,
 				   SUN8I_AIF_CLK_CTRL_BCLK_DIV_MASK,
 				   bclk_div << SUN8I_AIF_CLK_CTRL_BCLK_DIV);
 
@@ -419,11 +369,11 @@ static int sun8i_codec_hw_params(struct snd_pcm_substream *substream,
 		if (lrck_div < 0)
 			return lrck_div;
 
-		regmap_update_bits(scodec->regmap, reg,
+		regmap_update_bits(component->regmap, reg,
 				   SUN8I_AIF_CLK_CTRL_LRCK_DIV_MASK,
 				   lrck_div << SUN8I_AIF_CLK_CTRL_LRCK_DIV);
 	} else {
-		regmap_update_bits(scodec->regmap, reg,
+		regmap_update_bits(component->regmap, reg,
 				   SUN8I_AIF3_CLK_CTRL_AIF3_CLOCK_SRC_MASK,
 				   SUN8I_AIF3_CLK_CTRL_AIF3_CLOCK_SRC_AIF2);
 	}
@@ -444,13 +394,13 @@ static int sun8i_codec_hw_params(struct snd_pcm_substream *substream,
 	default:
 		return -EINVAL;
 	}
-	regmap_update_bits(scodec->regmap, reg,
+	regmap_update_bits(component->regmap, reg,
 			   SUN8I_AIF_CLK_CTRL_WORD_SIZ_MASK,
 			   value << SUN8I_AIF_CLK_CTRL_WORD_SIZ);
 
 	if (dai->id < 3) {
 		value = channels == 1;
-		regmap_update_bits(scodec->regmap, reg,
+		regmap_update_bits(component->regmap, reg,
 				   BIT(SUN8I_AIF_CLK_CTRL_MONO_PCM),
 				   value << SUN8I_AIF_CLK_CTRL_MONO_PCM);
 
@@ -458,7 +408,7 @@ static int sun8i_codec_hw_params(struct snd_pcm_substream *substream,
 		if (sample_rate < 0)
 			return sample_rate;
 
-		regmap_update_bits(scodec->regmap, SUN8I_SYS_SR_CTRL,
+		regmap_update_bits(component->regmap, SUN8I_SYS_SR_CTRL,
 				   SUN8I_SYS_SR_CTRL_AIF_FS_MASK(dai->id),
 				   sample_rate << SUN8I_SYS_SR_CTRL_AIF_FS(dai->id));
 	}
@@ -870,6 +820,8 @@ static const struct snd_soc_dapm_widget sun8i_codec_dapm_widgets[] = {
 			    SUN8I_SYSCLK_CTL_AIF2CLK_ENA, 0, NULL, 0),
 	SND_SOC_DAPM_SUPPLY("SYSCLK", SUN8I_SYSCLK_CTL,
 			    SUN8I_SYSCLK_CTL_SYSCLK_ENA, 0, NULL, 0),
+
+	SND_SOC_DAPM_CLOCK_SUPPLY("mod"),
 };
 
 static const struct snd_soc_dapm_route sun8i_codec_dapm_routes[] = {
@@ -1058,24 +1010,25 @@ static const struct snd_soc_dapm_route sun8i_codec_dapm_routes[] = {
 
 	/* Clock Supply Routes */
 	{ "SYSCLK", NULL, "AIF1CLK" },
+
+	{ "AIF1CLK", NULL, "mod" },
+	{ "AIF2CLK", NULL, "mod" },
 };
 
 static int sun8i_codec_component_probe(struct snd_soc_component *component)
 {
-	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(component);
-
 	/* Set AIF1CLK clock source to PLL */
-	regmap_update_bits(scodec->regmap, SUN8I_SYSCLK_CTL,
+	regmap_update_bits(component->regmap, SUN8I_SYSCLK_CTL,
 			   SUN8I_SYSCLK_CTL_AIF1CLK_SRC_MASK,
 			   SUN8I_SYSCLK_CTL_AIF1CLK_SRC_PLL);
 
 	/* Set AIF2CLK clock source to PLL */
-	regmap_update_bits(scodec->regmap, SUN8I_SYSCLK_CTL,
+	regmap_update_bits(component->regmap, SUN8I_SYSCLK_CTL,
 			   SUN8I_SYSCLK_CTL_AIF2CLK_SRC_MASK,
 			   SUN8I_SYSCLK_CTL_AIF2CLK_SRC_PLL);
 
 	/* Set SYSCLK clock source to AIF1CLK */
-	regmap_update_bits(scodec->regmap, SUN8I_SYSCLK_CTL,
+	regmap_update_bits(component->regmap, SUN8I_SYSCLK_CTL,
 			   BIT(SUN8I_SYSCLK_CTL_SYSCLK_SRC),
 			   SUN8I_SYSCLK_CTL_SYSCLK_SRC_AIF1CLK);
 
@@ -1090,7 +1043,6 @@ static const struct snd_soc_component_driver sun8i_soc_component = {
 	.dapm_routes		= sun8i_codec_dapm_routes,
 	.num_dapm_routes	= ARRAY_SIZE(sun8i_codec_dapm_routes),
 	.probe			= sun8i_codec_component_probe,
-	.idle_bias_on		= 1,
 	.use_pmdown_time	= 1,
 	.endianness		= 1,
 	.non_legacy_dai_naming	= 1,
@@ -1101,15 +1053,13 @@ static const struct regmap_config sun8i_codec_regmap_config = {
 	.reg_stride	= 4,
 	.val_bits	= 32,
 	.max_register	= SUN8I_DAC_MXR_SRC,
-
-	.cache_type	= REGCACHE_FLAT,
 };
 
 static int sun8i_codec_probe(struct platform_device *pdev)
 {
 	struct sun8i_codec *scodec;
+	struct regmap *regmap;
 	void __iomem *base;
-	int ret;
 
 	scodec = devm_kzalloc(&pdev->dev, sizeof(*scodec), GFP_KERNEL);
 	if (!scodec)
@@ -1121,63 +1071,26 @@ static int sun8i_codec_probe(struct platform_device *pdev)
 		return PTR_ERR(scodec->clk_module);
 	}
 
-	scodec->clk_bus = devm_clk_get(&pdev->dev, "bus");
-	if (IS_ERR(scodec->clk_bus)) {
-		dev_err(&pdev->dev, "Failed to get the bus clock\n");
-		return PTR_ERR(scodec->clk_bus);
-	}
-
 	base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(base)) {
 		dev_err(&pdev->dev, "Failed to map the registers\n");
 		return PTR_ERR(base);
 	}
 
-	scodec->regmap = devm_regmap_init_mmio(&pdev->dev, base,
-					       &sun8i_codec_regmap_config);
-	if (IS_ERR(scodec->regmap)) {
+	regmap = devm_regmap_init_mmio_clk(&pdev->dev, "bus", base,
+					   &sun8i_codec_regmap_config);
+	if (IS_ERR(regmap)) {
 		dev_err(&pdev->dev, "Failed to create our regmap\n");
-		return PTR_ERR(scodec->regmap);
+		return PTR_ERR(regmap);
 	}
 
 	scodec->inverted_lrck = (uintptr_t)of_device_get_match_data(&pdev->dev);
 
 	platform_set_drvdata(pdev, scodec);
 
-	pm_runtime_enable(&pdev->dev);
-	if (!pm_runtime_enabled(&pdev->dev)) {
-		ret = sun8i_codec_runtime_resume(&pdev->dev);
-		if (ret)
-			goto err_pm_disable;
-	}
-
-	ret = devm_snd_soc_register_component(&pdev->dev, &sun8i_soc_component,
-					      sun8i_codec_dais,
-					      ARRAY_SIZE(sun8i_codec_dais));
-	if (ret) {
-		dev_err(&pdev->dev, "Failed to register codec\n");
-		goto err_suspend;
-	}
-
-	return ret;
-
-err_suspend:
-	if (!pm_runtime_status_suspended(&pdev->dev))
-		sun8i_codec_runtime_suspend(&pdev->dev);
-
-err_pm_disable:
-	pm_runtime_disable(&pdev->dev);
-
-	return ret;
-}
-
-static int sun8i_codec_remove(struct platform_device *pdev)
-{
-	pm_runtime_disable(&pdev->dev);
-	if (!pm_runtime_status_suspended(&pdev->dev))
-		sun8i_codec_runtime_suspend(&pdev->dev);
-
-	return 0;
+	return devm_snd_soc_register_component(&pdev->dev, &sun8i_soc_component,
+					       sun8i_codec_dais,
+					       ARRAY_SIZE(sun8i_codec_dais));
 }
 
 static const struct of_device_id sun8i_codec_of_match[] = {
@@ -1193,19 +1106,12 @@ static const struct of_device_id sun8i_codec_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, sun8i_codec_of_match);
 
-static const struct dev_pm_ops sun8i_codec_pm_ops = {
-	SET_RUNTIME_PM_OPS(sun8i_codec_runtime_suspend,
-			   sun8i_codec_runtime_resume, NULL)
-};
-
 static struct platform_driver sun8i_codec_driver = {
 	.driver = {
 		.name = "sun8i-codec",
 		.of_match_table = sun8i_codec_of_match,
-		.pm = &sun8i_codec_pm_ops,
 	},
 	.probe = sun8i_codec_probe,
-	.remove = sun8i_codec_remove,
 };
 module_platform_driver(sun8i_codec_driver);
 
