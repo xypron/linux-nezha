@@ -20,6 +20,7 @@
 #include <linux/init.h>
 #include <linux/pm_runtime.h>
 #include <linux/sched.h>
+#include <linux/syscore_ops.h>
 #include <linux/clkdev.h>
 
 #include "clk.h"
@@ -2891,6 +2892,49 @@ static HLIST_HEAD(clk_debug_list);
 static struct hlist_head *orphan_list[] = {
 	&clk_orphan_list,
 	NULL,
+};
+
+static void clk_summary_print_one(struct clk_core *c, int level)
+{
+	pr_info("%*s%-*s %7d %8d %8d %11lu\n",
+		level * 3 + 1, "",
+		30 - level * 3, c->name,
+		c->enable_count, c->prepare_count, c->protect_count,
+		clk_core_get_rate(c));
+}
+
+static void clk_summary_print_subtree(struct clk_core *c, int level)
+{
+	struct clk_core *child;
+
+	clk_summary_print_one(c, level);
+
+	hlist_for_each_entry(child, &c->children, child_node)
+		clk_summary_print_subtree(child, level + 1);
+}
+
+static int clk_summary_print(void)
+{
+	struct hlist_head **lists;
+	struct clk_core *c;
+
+	pr_info("                                 enable  prepare  protect             \n");
+	pr_info("   clock                          count    count    count        rate \n");
+	pr_info("----------------------------------------------------------------------\n");
+
+	clk_prepare_lock();
+
+	for (lists = all_lists; *lists; lists++)
+		hlist_for_each_entry(c, *lists, child_node)
+			clk_summary_print_subtree(c, 0);
+
+	clk_prepare_unlock();
+
+	return 0;
+}
+
+struct syscore_ops clk_syscore_ops = {
+	.suspend = clk_summary_print,
 };
 
 static void clk_summary_show_one(struct seq_file *s, struct clk_core *c,

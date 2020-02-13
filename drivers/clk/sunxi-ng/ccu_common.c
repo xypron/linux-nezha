@@ -80,6 +80,8 @@ int ccu_pll_notifier_register(struct ccu_pll_nb *pll_nb)
 				     &pll_nb->clk_nb);
 }
 
+extern struct syscore_ops clk_syscore_ops;
+
 static struct syscore_ops ccu_syscore_ops = {
 	.suspend = clk_save_context,
 	.resume = clk_restore_context,
@@ -139,8 +141,10 @@ int sunxi_ccu_probe(struct device_node *node, void __iomem *reg,
 	if (ret)
 		goto err_of_clk_unreg;
 
-	if (!ccu_syscore_ops.node.next)
+	if (!ccu_syscore_ops.node.next) {
+		register_syscore_ops(&clk_syscore_ops);
 		register_syscore_ops(&ccu_syscore_ops);
+	}
 
 	return 0;
 
