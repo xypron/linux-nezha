@@ -25,6 +25,7 @@
 #include <linux/regulator/coupler.h>
 #include <linux/regulator/driver.h>
 #include <linux/regulator/machine.h>
+#include <linux/syscore_ops.h>
 #include <linux/module.h>
 
 #define CREATE_TRACE_POINTS
@@ -5653,6 +5654,83 @@ static int regulator_summary_show(struct seq_file *s, void *data)
 	return 0;
 }
 DEFINE_SHOW_ATTRIBUTE(regulator_summary);
+
+static void regulator_summary_print_subtree(struct regulator_dev *rdev,
+					    int level);
+
+static int regulator_summary_print_children(struct device *dev, void *data)
+{
+	struct regulator_dev *rdev = dev_to_rdev(dev);
+	struct summary_data *summary_data = data;
+
+	if (rdev->supply && rdev->supply->rdev == summary_data->parent)
+		regulator_summary_print_subtree(rdev, summary_data->level + 1);
+
+	return 0;
+}
+
+static void regulator_summary_print_subtree(struct regulator_dev *rdev,
+					    int level)
+{
+	struct regulator *consumer;
+	struct summary_data summary_data;
+	unsigned int opmode;
+
+	if (!rdev)
+		return;
+
+	opmode = _regulator_get_mode_unlocked(rdev);
+	pr_info("%*s%-*s %7d %4d\n",
+		level * 3 + 1, "",
+		30 - level * 3, rdev_get_name(rdev),
+		rdev->use_count, rdev->open_count);
+
+	list_for_each_entry(consumer, &rdev->consumer_list, list) {
+		if (consumer->dev && consumer->dev->class == &regulator_class)
+			continue;
+
+		pr_info("%*s%s\n",
+			(level + 1) * 3 + 1, "",
+			consumer->dev ? dev_name(consumer->dev) : "deviceless");
+	}
+
+	summary_data.level = level;
+	summary_data.parent = rdev;
+
+	class_for_each_device(&regulator_class, NULL, &summary_data,
+			      regulator_summary_print_children);
+}
+
+static int regulator_summary_print_roots(struct device *dev, void *data)
+{
+	struct regulator_dev *rdev = dev_to_rdev(dev);
+
+	if (!rdev->supply)
+		regulator_summary_print_subtree(rdev, 0);
+
+	return 0;
+}
+
+static int regulator_summary_print(void)
+{
+	struct ww_acquire_ctx ww_ctx;
+
+	pr_info(" regulator                          use open \n");
+	pr_info("---------------------------------------------\n");
+
+	regulator_summary_lock(&ww_ctx);
+
+	class_for_each_device(&regulator_class, NULL, NULL,
+			      regulator_summary_print_roots);
+
+	regulator_summary_unlock(&ww_ctx);
+
+	return 0;
+}
+
+static struct syscore_ops regulator_syscore_ops = {
+	.suspend = regulator_summary_print,
+};
 #endif /* CONFIG_DEBUG_FS */
 
 static int __init regulator_init(void)
@@ -5660,6 +5738,8 @@ static int __init regulator_init(void)
 	int ret;
 
 	ret = class_register(&regulator_class);
+
+	register_syscore_ops(&regulator_syscore_ops);
 
 	debugfs_root = debugfs_create_dir("regulator", NULL);
 	if (!debugfs_root)
