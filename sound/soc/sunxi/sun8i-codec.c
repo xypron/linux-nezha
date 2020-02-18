@@ -93,6 +93,11 @@
 			     SNDRV_PCM_RATE_192000|\
 			     SNDRV_PCM_RATE_KNOT)
 
+#define SUN8I_AIF_PCM_RATES (SNDRV_PCM_RATE_8000_48000|\
+			     SNDRV_PCM_RATE_96000|\
+			     SNDRV_PCM_RATE_192000|\
+			     SNDRV_PCM_RATE_KNOT)
+
 struct sun8i_codec {
 	struct regmap	*regmap;
 	struct clk	*clk_module;
