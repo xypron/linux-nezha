@@ -572,8 +572,8 @@
 
 	simple-audio-card,dai-link@1 {
 		format = "dsp_a";
-		frame-master = <&link1_cpu>;
-		bitclock-master = <&link1_cpu>;
+		frame-master = <&link1_codec>;
+		bitclock-master = <&link1_codec>;
 		bitclock-inversion;
 
 		link1_cpu: cpu {
@@ -587,8 +587,8 @@
 
 	simple-audio-card,dai-link@2 {
 		format = "dsp_a";
-		frame-master = <&link2_cpu>;
-		bitclock-master = <&link2_cpu>;
+		frame-master = <&link2_codec>;
+		bitclock-master = <&link2_codec>;
 		bitclock-inversion;
 
 		link2_cpu: cpu {
