@@ -178,7 +178,7 @@ static SUNXI_CCU_NM_WITH_FRAC_GATE_LOCK(pll10_clk, "pll10",
 
 static const char * const cpux_parents[] = { "osc32k", "osc24M",
 					     "pll-cpu", "pll-cpu" };
-static SUNXI_CCU_MUX(cpu_clk, "cpu", cpux_parents,
+static SUNXI_CCU_MUX_BYPASS(cpu_clk, "cpu", cpux_parents, 1 /* osc24M */,
 		     0x050, 16, 2, CLK_SET_RATE_PARENT | CLK_IS_CRITICAL);
 
 static struct clk_div_table axi_div_table[] = {

@@ -226,11 +226,11 @@ static struct ccu_nkmp pll_video1_clk = {
 };
 
 static const char * const c0cpux_parents[] = { "osc24M", "pll-c0cpux" };
-static SUNXI_CCU_MUX(c0cpux_clk, "c0cpux", c0cpux_parents,
+static SUNXI_CCU_MUX_BYPASS(c0cpux_clk, "c0cpux", c0cpux_parents, 0 /* osc24M */,
 		     0x50, 12, 1, CLK_SET_RATE_PARENT | CLK_IS_CRITICAL);
 
 static const char * const c1cpux_parents[] = { "osc24M", "pll-c1cpux" };
-static SUNXI_CCU_MUX(c1cpux_clk, "c1cpux", c1cpux_parents,
+static SUNXI_CCU_MUX_BYPASS(c1cpux_clk, "c1cpux", c1cpux_parents, 0 /* osc24M */,
 		     0x50, 28, 1, CLK_SET_RATE_PARENT | CLK_IS_CRITICAL);
 
 static SUNXI_CCU_M(axi0_clk, "axi0", "c0cpux", 0x050, 0, 2, 0);

@@ -106,7 +106,7 @@ static struct ccu_nk pll_periph_clk = {
 
 static const char * const cpu_parents[] = { "osc32k", "osc24M",
 					     "pll-cpu", "pll-cpu" };
-static SUNXI_CCU_MUX(cpu_clk, "cpu", cpu_parents,
+static SUNXI_CCU_MUX_BYPASS(cpux_clk, "cpux", cpux_parents, 1 /* osc24M */,
 		     0x050, 16, 2, CLK_IS_CRITICAL | CLK_SET_RATE_PARENT);
 
 static const char * const ahb_parents[] = { "osc32k", "osc24M",

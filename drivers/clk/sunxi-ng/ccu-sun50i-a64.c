@@ -217,7 +217,7 @@ static SUNXI_CCU_NM_WITH_GATE_LOCK(pll_ddr1_clk, "pll-ddr1",
 
 static const char * const cpux_parents[] = { "osc32k", "osc24M",
 					     "pll-cpux", "pll-cpux" };
-static SUNXI_CCU_MUX(cpux_clk, "cpux", cpux_parents,
+static SUNXI_CCU_MUX_BYPASS(cpux_clk, "cpux", cpux_parents, 1 /* osc24M */,
 		     0x050, 16, 2, CLK_SET_RATE_PARENT | CLK_IS_CRITICAL);
 
 static SUNXI_CCU_M(axi_clk, "axi", "cpux", 0x050, 0, 2, 0);

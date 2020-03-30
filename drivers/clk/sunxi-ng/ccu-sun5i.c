@@ -183,6 +183,8 @@ static struct ccu_mux cpu_clk = {
 		.width		= 2,
 		.fixed_predivs	= cpu_predivs,
 		.n_predivs	= ARRAY_SIZE(cpu_predivs),
+		.bypass_enabled	= true,
+		.bypass_index	= 1 /* hosc */,
 	},
 	.common		= {
 		.reg		= 0x054,

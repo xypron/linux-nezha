@@ -227,7 +227,7 @@ static struct ccu_nm pll_audio_base_clk = {
 
 static const char * const cpux_parents[] = { "osc24M", "osc32k",
 					     "iosc", "pll-cpux" };
-static SUNXI_CCU_MUX(cpux_clk, "cpux", cpux_parents,
+static SUNXI_CCU_MUX_BYPASS(cpux_clk, "cpux", cpux_parents, 0 /* osc24M */,
 		     0x500, 24, 2, CLK_SET_RATE_PARENT | CLK_IS_CRITICAL);
 static SUNXI_CCU_M(axi_clk, "axi", "cpux", 0x500, 0, 2, 0);
 static SUNXI_CCU_M(cpux_apb_clk, "cpux-apb", "cpux", 0x500, 8, 2, 0);
