@@ -326,13 +326,9 @@ static int ccu_mux_notifier_cb(struct notifier_block *nb,
 	int ret = 0;
 
 	if (event == PRE_RATE_CHANGE) {
-		mux->original_index = ccu_mux_helper_get_parent(mux->common,
-								mux->cm);
-		ret = ccu_mux_helper_set_parent(mux->common, mux->cm,
-						mux->bypass_index);
+		ret = ccu_mux_helper_activate_bypass(mux->common, mux->cm);
 	} else if (event == POST_RATE_CHANGE) {
-		ret = ccu_mux_helper_set_parent(mux->common, mux->cm,
-						mux->original_index);
+		ccu_mux_helper_deactivate_bypass(mux->common, mux->cm);
 	}
 
 	udelay(mux->delay_us);

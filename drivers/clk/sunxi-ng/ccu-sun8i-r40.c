@@ -1265,7 +1265,6 @@ static struct ccu_mux_nb sun8i_r40_cpu_nb = {
 	.common		= &cpu_clk.common,
 	.cm		= &cpu_clk.mux,
 	.delay_us	= 1, /* > 8 clock cycles at 24 MHz */
-	.bypass_index	= 1, /* index of 24 MHz oscillator */
 };
 
 /*

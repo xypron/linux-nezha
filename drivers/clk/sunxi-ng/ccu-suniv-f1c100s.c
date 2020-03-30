@@ -519,7 +519,6 @@ static struct ccu_mux_nb suniv_cpu_nb = {
 	.common		= &cpu_clk.common,
 	.cm		= &cpu_clk.mux,
 	.delay_us	= 1, /* > 8 clock cycles at 24 MHz */
-	.bypass_index	= 1, /* index of 24 MHz oscillator */
 };
 
 static void __init suniv_f1c100s_ccu_setup(struct device_node *node)

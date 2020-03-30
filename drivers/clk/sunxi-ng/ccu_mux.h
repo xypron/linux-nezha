@@ -142,8 +142,6 @@ struct ccu_mux_nb {
 	struct ccu_mux_internal	*cm;
 
 	u32	delay_us;	/* How many us to wait after reparenting */
-	u8	bypass_index;	/* Which parent to temporarily use */
-	u8	original_index;	/* This is set by the notifier callback */
 };
 
 #define to_ccu_mux_nb(_nb) container_of(_nb, struct ccu_mux_nb, clk_nb)

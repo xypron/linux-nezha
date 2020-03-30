@@ -1140,7 +1140,6 @@ static struct ccu_mux_nb sun8i_h3_cpu_nb = {
 	.common		= &cpux_clk.common,
 	.cm		= &cpux_clk.mux,
 	.delay_us	= 1, /* > 8 clock cycles at 24 MHz */
-	.bypass_index	= 1, /* index of 24 MHz oscillator */
 };
 
 static void __init sunxi_h3_h5_ccu_init(struct device_node *node,
