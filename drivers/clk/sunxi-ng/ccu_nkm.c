@@ -180,6 +180,20 @@ static int ccu_nkm_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
+static int ccu_nkm_save_context(struct clk_hw *hw)
+{
+	struct ccu_nkm *nkm = hw_to_ccu_nkm(hw);
+
+	return ccu_mux_helper_activate_bypass(&nkm->common, &nkm->mux);
+}
+
+static void ccu_nkm_restore_context(struct clk_hw *hw)
+{
+	struct ccu_nkm *nkm = hw_to_ccu_nkm(hw);
+
+	return ccu_mux_helper_deactivate_bypass(&nkm->common, &nkm->mux);
+}
+
 static u8 ccu_nkm_get_parent(struct clk_hw *hw)
 {
 	struct ccu_nkm *nkm = hw_to_ccu_nkm(hw);
@@ -198,6 +212,9 @@ const struct clk_ops ccu_nkm_ops = {
 	.disable	= ccu_nkm_disable,
 	.enable		= ccu_nkm_enable,
 	.is_enabled	= ccu_nkm_is_enabled,
+
+	.save_context	= ccu_nkm_save_context,
+	.restore_context= ccu_nkm_restore_context,
 
 	.get_parent	= ccu_nkm_get_parent,
 	.set_parent	= ccu_nkm_set_parent,

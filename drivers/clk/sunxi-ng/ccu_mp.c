@@ -219,6 +219,20 @@ static int ccu_mp_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
+static int ccu_mp_save_context(struct clk_hw *hw)
+{
+	struct ccu_mp *cmp = hw_to_ccu_mp(hw);
+
+	return ccu_mux_helper_activate_bypass(&cmp->common, &cmp->mux);
+}
+
+static void ccu_mp_restore_context(struct clk_hw *hw)
+{
+	struct ccu_mp *cmp = hw_to_ccu_mp(hw);
+
+	return ccu_mux_helper_deactivate_bypass(&cmp->common, &cmp->mux);
+}
+
 static u8 ccu_mp_get_parent(struct clk_hw *hw)
 {
 	struct ccu_mp *cmp = hw_to_ccu_mp(hw);
@@ -237,6 +251,9 @@ const struct clk_ops ccu_mp_ops = {
 	.disable	= ccu_mp_disable,
 	.enable		= ccu_mp_enable,
 	.is_enabled	= ccu_mp_is_enabled,
+
+	.save_context	= ccu_mp_save_context,
+	.restore_context= ccu_mp_restore_context,
 
 	.get_parent	= ccu_mp_get_parent,
 	.set_parent	= ccu_mp_set_parent,
@@ -317,6 +334,9 @@ const struct clk_ops ccu_mp_mmc_ops = {
 	.disable	= ccu_mp_disable,
 	.enable		= ccu_mp_enable,
 	.is_enabled	= ccu_mp_is_enabled,
+
+	.save_context	= ccu_mp_save_context,
+	.restore_context= ccu_mp_restore_context,
 
 	.get_parent	= ccu_mp_get_parent,
 	.set_parent	= ccu_mp_set_parent,

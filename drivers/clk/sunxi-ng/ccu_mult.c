@@ -144,6 +144,20 @@ static int ccu_mult_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
+static int ccu_mult_save_context(struct clk_hw *hw)
+{
+	struct ccu_mult *cm = hw_to_ccu_mult(hw);
+
+	return ccu_mux_helper_activate_bypass(&cm->common, &cm->mux);
+}
+
+static void ccu_mult_restore_context(struct clk_hw *hw)
+{
+	struct ccu_mult *cm = hw_to_ccu_mult(hw);
+
+	return ccu_mux_helper_deactivate_bypass(&cm->common, &cm->mux);
+}
+
 static u8 ccu_mult_get_parent(struct clk_hw *hw)
 {
 	struct ccu_mult *cm = hw_to_ccu_mult(hw);
@@ -162,6 +176,9 @@ const struct clk_ops ccu_mult_ops = {
 	.disable	= ccu_mult_disable,
 	.enable		= ccu_mult_enable,
 	.is_enabled	= ccu_mult_is_enabled,
+
+	.save_context	= ccu_mult_save_context,
+	.restore_context= ccu_mult_restore_context,
 
 	.get_parent	= ccu_mult_get_parent,
 	.set_parent	= ccu_mult_set_parent,

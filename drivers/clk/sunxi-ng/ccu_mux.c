@@ -196,6 +196,50 @@ int ccu_mux_helper_set_parent(struct ccu_common *common,
 	return 0;
 }
 
+int ccu_mux_helper_activate_bypass(struct ccu_common *common,
+				   struct ccu_mux_internal *cm)
+{
+	struct clk_hw *parent;
+	u8 index;
+	int ret;
+
+	if (!cm->bypass_enabled || cm->bypass_active)
+		return 0;
+
+	index = ccu_mux_helper_get_parent(common, cm);
+	if (index == cm->bypass_index)
+		return 0;
+
+	parent = clk_hw_get_parent_by_index(&common->hw, cm->bypass_index);
+	if (!parent)
+		return -ENOENT;
+
+	ret = clk_hw_set_parent(&common->hw, parent);
+	if (ret)
+		return ret;
+
+	cm->bypass_active = true;
+	cm->saved_index = index;
+
+	return 0;
+}
+
+void ccu_mux_helper_deactivate_bypass(struct ccu_common *common,
+				      struct ccu_mux_internal *cm)
+{
+	struct clk_hw *parent;
+
+	if (!cm->bypass_active)
+		return;
+
+	parent = clk_hw_get_parent_by_index(&common->hw, cm->saved_index);
+	if (!parent)
+		return;
+
+	clk_hw_set_parent(&common->hw, parent);
+	cm->bypass_active = false;
+}
+
 static void ccu_mux_disable(struct clk_hw *hw)
 {
 	struct ccu_mux *cm = hw_to_ccu_mux(hw);
@@ -215,6 +259,20 @@ static int ccu_mux_is_enabled(struct clk_hw *hw)
 	struct ccu_mux *cm = hw_to_ccu_mux(hw);
 
 	return ccu_gate_helper_is_enabled(&cm->common, cm->enable);
+}
+
+static int ccu_mux_save_context(struct clk_hw *hw)
+{
+	struct ccu_mux *cm = hw_to_ccu_mux(hw);
+
+	return ccu_mux_helper_activate_bypass(&cm->common, &cm->mux);
+}
+
+static void ccu_mux_restore_context(struct clk_hw *hw)
+{
+	struct ccu_mux *cm = hw_to_ccu_mux(hw);
+
+	return ccu_mux_helper_deactivate_bypass(&cm->common, &cm->mux);
 }
 
 static u8 ccu_mux_get_parent(struct clk_hw *hw)
@@ -244,6 +302,9 @@ const struct clk_ops ccu_mux_ops = {
 	.disable	= ccu_mux_disable,
 	.enable		= ccu_mux_enable,
 	.is_enabled	= ccu_mux_is_enabled,
+
+	.save_context	= ccu_mux_save_context,
+	.restore_context= ccu_mux_restore_context,
 
 	.get_parent	= ccu_mux_get_parent,
 	.set_parent	= ccu_mux_set_parent,

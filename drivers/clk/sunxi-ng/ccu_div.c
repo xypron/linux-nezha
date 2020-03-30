@@ -115,6 +115,20 @@ static int ccu_div_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
+static int ccu_div_save_context(struct clk_hw *hw)
+{
+	struct ccu_div *cd = hw_to_ccu_div(hw);
+
+	return ccu_mux_helper_activate_bypass(&cd->common, &cd->mux);
+}
+
+static void ccu_div_restore_context(struct clk_hw *hw)
+{
+	struct ccu_div *cd = hw_to_ccu_div(hw);
+
+	return ccu_mux_helper_deactivate_bypass(&cd->common, &cd->mux);
+}
+
 static u8 ccu_div_get_parent(struct clk_hw *hw)
 {
 	struct ccu_div *cd = hw_to_ccu_div(hw);
@@ -133,6 +147,9 @@ const struct clk_ops ccu_div_ops = {
 	.disable	= ccu_div_disable,
 	.enable		= ccu_div_enable,
 	.is_enabled	= ccu_div_is_enabled,
+
+	.save_context	= ccu_div_save_context,
+	.restore_context= ccu_div_restore_context,
 
 	.get_parent	= ccu_div_get_parent,
 	.set_parent	= ccu_div_set_parent,

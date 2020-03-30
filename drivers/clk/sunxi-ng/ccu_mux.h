@@ -22,10 +22,22 @@ struct ccu_mux_internal {
 	const struct ccu_mux_var_prediv		*var_predivs;
 	u8		n_predivs;
 	u8		n_var_predivs;
+	u8		bypass_active	: 1;
+	u8		bypass_enabled	: 1;
+	u8		bypass_index;
+	u8		saved_index;
 	u8		shift;
 	u8		width;
 	const u8	*table;
 };
+
+#define _SUNXI_CCU_MUX_BYPASS(_shift, _width, _bypass)	\
+	{						\
+		.shift		= _shift,		\
+		.width		= _width,		\
+		.bypass_enabled	= true,			\
+		.bypass_index	= _bypass,		\
+	}
 
 #define _SUNXI_CCU_MUX_TABLE(_shift, _width, _table)	\
 	{						\
@@ -43,6 +55,27 @@ struct ccu_mux {
 	struct ccu_mux_internal	mux;
 	struct ccu_common	common;
 };
+
+#define SUNXI_CCU_MUX_BYPASS_WITH_GATE(_struct, _name, _parents,	\
+				       _bypass, _reg, _shift, _width,	\
+				       _gate, _flags)			\
+	struct ccu_mux _struct = {					\
+		.enable	= _gate,					\
+		.mux	= _SUNXI_CCU_MUX_BYPASS(_shift, _width,	_bypass), \
+		.common	= {						\
+			.reg		= _reg,				\
+			.hw.init	= CLK_HW_INIT_PARENTS(_name,	\
+							      _parents, \
+							      &ccu_mux_ops, \
+							      _flags),	\
+		}							\
+	}
+
+#define SUNXI_CCU_MUX_BYPASS(_struct, _name, _parents, _bypass, _reg,	\
+			     _shift, _width, _flags)			\
+	SUNXI_CCU_MUX_BYPASS_WITH_GATE(_struct, _name, _parents,	\
+				       _bypass, _reg, _shift, _width,	\
+				       0, _flags)
 
 #define SUNXI_CCU_MUX_TABLE_WITH_GATE(_struct, _name, _parents, _table,	\
 				     _reg, _shift, _width, _gate,	\
@@ -97,6 +130,11 @@ u8 ccu_mux_helper_get_parent(struct ccu_common *common,
 int ccu_mux_helper_set_parent(struct ccu_common *common,
 			      struct ccu_mux_internal *cm,
 			      u8 index);
+
+int ccu_mux_helper_activate_bypass(struct ccu_common *common,
+				   struct ccu_mux_internal *cm);
+void ccu_mux_helper_deactivate_bypass(struct ccu_common *common,
+				      struct ccu_mux_internal *cm);
 
 struct ccu_mux_nb {
 	struct notifier_block	clk_nb;

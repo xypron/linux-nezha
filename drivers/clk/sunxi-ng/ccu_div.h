@@ -108,6 +108,36 @@ struct ccu_div {
 				      _shift, _width, _table, 0,	\
 				      _flags)
 
+#define SUNXI_CCU_M_WITH_MUX_BYPASS_GATE(_struct, _name,		\
+					 _parents, _bypass, _reg,	\
+					 _mshift, _mwidth,		\
+					 _muxshift, _muxwidth,		\
+					 _gate, _flags)			\
+	struct ccu_div _struct = {					\
+		.enable	= _gate,					\
+		.div	= _SUNXI_CCU_DIV(_mshift, _mwidth),		\
+		.mux	= _SUNXI_CCU_MUX_BYPASS(_muxshift, _muxwidth, _bypass), \
+		.common	= {						\
+			.reg		= _reg,				\
+			.hw.init	= CLK_HW_INIT_PARENTS(_name,	\
+							      _parents, \
+							      &ccu_div_ops, \
+							      _flags),	\
+		},							\
+	}
+
+#define SUNXI_CCU_M_WITH_MUX_BYPASS(_struct, _name,			\
+				    _parents, _bypass, _reg,		\
+				    _mshift, _mwidth,			\
+				    _muxshift, _muxwidth,		\
+				    _flags)				\
+	SUNXI_CCU_M_WITH_MUX_BYPASS_GATE(_struct, _name,		\
+					_parents, _bypass, _reg,	\
+					_mshift, _mwidth,		\
+					_muxshift, _muxwidth,		\
+					0, _flags)
+
+
 #define SUNXI_CCU_M_WITH_MUX_TABLE_GATE(_struct, _name,			\
 					_parents, _table,		\
 					_reg,				\

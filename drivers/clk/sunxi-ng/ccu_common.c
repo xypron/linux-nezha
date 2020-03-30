@@ -9,6 +9,7 @@
 #include <linux/clk-provider.h>
 #include <linux/iopoll.h>
 #include <linux/slab.h>
+#include <linux/syscore_ops.h>
 
 #include "ccu_common.h"
 #include "ccu_gate.h"
@@ -79,6 +80,11 @@ int ccu_pll_notifier_register(struct ccu_pll_nb *pll_nb)
 				     &pll_nb->clk_nb);
 }
 
+static struct syscore_ops ccu_syscore_ops = {
+	.suspend = clk_save_context,
+	.resume = clk_restore_context,
+};
+
 int sunxi_ccu_probe(struct device_node *node, void __iomem *reg,
 		    const struct sunxi_ccu_desc *desc)
 {
@@ -132,6 +138,9 @@ int sunxi_ccu_probe(struct device_node *node, void __iomem *reg,
 	ret = reset_controller_register(&reset->rcdev);
 	if (ret)
 		goto err_of_clk_unreg;
+
+	if (!ccu_syscore_ops.node.next)
+		register_syscore_ops(&ccu_syscore_ops);
 
 	return 0;
 

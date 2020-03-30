@@ -52,6 +52,39 @@ struct ccu_mp {
 		}							\
 	}
 
+#define SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(_struct, _name,		\
+					  _parents, _bypass, _reg,	\
+					  _mshift, _mwidth,		\
+					  _pshift, _pwidth,		\
+					  _muxshift, _muxwidth,		\
+					  _gate, _flags)		\
+	struct ccu_mp _struct = {					\
+		.enable	= _gate,					\
+		.m	= _SUNXI_CCU_DIV(_mshift, _mwidth),		\
+		.p	= _SUNXI_CCU_DIV(_pshift, _pwidth),		\
+		.mux	= _SUNXI_CCU_MUX_BYPASS(_muxshift, _muxwidth, _bypass),	\
+		.common	= {						\
+			.reg		= _reg,				\
+			.hw.init	= CLK_HW_INIT_PARENTS(_name,	\
+							      _parents, \
+							      &ccu_mp_ops, \
+							      _flags),	\
+		}							\
+	}
+
+#define SUNXI_CCU_MP_WITH_MUX_BYPASS(_struct, _name,			\
+				     _parents, _bypass, _reg,		\
+				     _mshift, _mwidth,			\
+				     _pshift, _pwidth,			\
+				     _muxshift, _muxwidth,		\
+				     _flags)				\
+	SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(_struct, _name,		\
+					  _parents, _bypass, _reg,	\
+					  _mshift, _mwidth,		\
+					  _pshift, _pwidth,		\
+					  _muxshift, _muxwidth,		\
+					  0, _flags)
+
 #define SUNXI_CCU_MP_WITH_MUX_GATE(_struct, _name, _parents, _reg,	\
 				   _mshift, _mwidth,			\
 				   _pshift, _pwidth,			\
