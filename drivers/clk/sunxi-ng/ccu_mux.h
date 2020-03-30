@@ -18,15 +18,13 @@ struct ccu_mux_var_prediv {
 };
 
 struct ccu_mux_internal {
+	const struct ccu_mux_fixed_prediv	*fixed_predivs;
+	const struct ccu_mux_var_prediv		*var_predivs;
+	u8		n_predivs;
+	u8		n_var_predivs;
 	u8		shift;
 	u8		width;
 	const u8	*table;
-
-	const struct ccu_mux_fixed_prediv	*fixed_predivs;
-	u8		n_predivs;
-
-	const struct ccu_mux_var_prediv		*var_predivs;
-	u8		n_var_predivs;
 };
 
 #define _SUNXI_CCU_MUX_TABLE(_shift, _width, _table)	\
