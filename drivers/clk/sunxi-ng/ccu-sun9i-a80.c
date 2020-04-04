@@ -265,7 +265,7 @@ static const char * const ahb_parents[] = { "gtbus", "pll-periph0",
 					    "pll-periph1", "pll-periph1" };
 static struct ccu_div ahb0_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
-	.mux		= _SUNXI_CCU_MUX(24, 2),
+	.mux		= _SUNXI_CCU_MUX_BYPASS(24, 2, 0 /* gtbus */),
 	.common		= {
 		.reg		= 0x060,
 		.hw.init	= CLK_HW_INIT_PARENTS("ahb0",
@@ -277,7 +277,7 @@ static struct ccu_div ahb0_clk = {
 
 static struct ccu_div ahb1_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
-	.mux		= _SUNXI_CCU_MUX(24, 2),
+	.mux		= _SUNXI_CCU_MUX_BYPASS(24, 2, 0 /* gtbus */),
 	.common		= {
 		.reg		= 0x064,
 		.hw.init	= CLK_HW_INIT_PARENTS("ahb1",
@@ -289,7 +289,7 @@ static struct ccu_div ahb1_clk = {
 
 static struct ccu_div ahb2_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
-	.mux		= _SUNXI_CCU_MUX(24, 2),
+	.mux		= _SUNXI_CCU_MUX_BYPASS(24, 2, 0 /* gtbus */),
 	.common		= {
 		.reg		= 0x068,
 		.hw.init	= CLK_HW_INIT_PARENTS("ahb2",
@@ -303,7 +303,7 @@ static const char * const apb_parents[] = { "osc24M", "pll-periph0" };
 
 static struct ccu_div apb0_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
-	.mux		= _SUNXI_CCU_MUX(24, 1),
+	.mux		= _SUNXI_CCU_MUX_BYPASS(24, 1, 0 /* osc24M */),
 	.common		= {
 		.reg		= 0x070,
 		.hw.init	= CLK_HW_INIT_PARENTS("apb0",
@@ -315,7 +315,7 @@ static struct ccu_div apb0_clk = {
 
 static struct ccu_div apb1_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
-	.mux		= _SUNXI_CCU_MUX(24, 1),
+	.mux		= _SUNXI_CCU_MUX_BYPASS(24, 1, 0 /* osc24M */),
 	.common		= {
 		.reg		= 0x074,
 		.hw.init	= CLK_HW_INIT_PARENTS("apb1",
@@ -327,7 +327,7 @@ static struct ccu_div apb1_clk = {
 
 static struct ccu_div cci400_clk = {
 	.div		= _SUNXI_CCU_DIV_FLAGS(0, 2, CLK_DIVIDER_POWER_OF_TWO),
-	.mux		= _SUNXI_CCU_MUX(24, 2),
+	.mux		= _SUNXI_CCU_MUX_BYPASS(24, 2, 0 /* gtbus */),
 	.common		= {
 		.reg		= 0x078,
 		.hw.init	= CLK_HW_INIT_PARENTS("cci400",

@@ -234,34 +234,40 @@ static SUNXI_CCU_M(cpux_apb_clk, "cpux-apb", "cpux", 0x500, 8, 2, 0);
 
 static const char * const psi_ahb1_ahb2_parents[] = { "osc24M", "osc32k",
 						      "iosc", "pll-periph0" };
-static SUNXI_CCU_MP_WITH_MUX(psi_ahb1_ahb2_clk, "psi-ahb1-ahb2",
-			     psi_ahb1_ahb2_parents,
-			     0x510,
-			     0, 5,	/* M */
-			     8, 2,	/* P */
-			     24, 2,	/* mux */
-			     0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS(psi_ahb1_ahb2_clk, "psi-ahb1-ahb2",
+				    psi_ahb1_ahb2_parents, 0 /* osc24M */,
+				    0x510,
+				    0, 5,	/* M */
+				    8, 2,	/* P */
+				    24, 2,	/* mux */
+				    0);
 
 static const char * const ahb3_apb1_apb2_parents[] = { "osc24M", "osc32k",
 						       "psi-ahb1-ahb2",
 						       "pll-periph0" };
-static SUNXI_CCU_MP_WITH_MUX(ahb3_clk, "ahb3", ahb3_apb1_apb2_parents, 0x51c,
-			     0, 5,	/* M */
-			     8, 2,	/* P */
-			     24, 2,	/* mux */
-			     0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS(ahb3_clk, "ahb3",
+				    ahb3_apb1_apb2_parents, 0 /* osc24M */,
+				    0x51c,
+				    0, 5,	/* M */
+				    8, 2,	/* P */
+				    24, 2,	/* mux */
+				    0);
 
-static SUNXI_CCU_MP_WITH_MUX(apb1_clk, "apb1", ahb3_apb1_apb2_parents, 0x520,
-			     0, 5,	/* M */
-			     8, 2,	/* P */
-			     24, 2,	/* mux */
-			     0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS(apb1_clk, "apb1",
+				    ahb3_apb1_apb2_parents, 0 /* osc24M */,
+				    0x520,
+				    0, 5,	/* M */
+				    8, 2,	/* P */
+				    24, 2,	/* mux */
+				    0);
 
-static SUNXI_CCU_MP_WITH_MUX(apb2_clk, "apb2", ahb3_apb1_apb2_parents, 0x524,
-			     0, 5,	/* M */
-			     8, 2,	/* P */
-			     24, 2,	/* mux */
-			     0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS(apb2_clk, "apb2",
+				    ahb3_apb1_apb2_parents, 0 /* osc24M */,
+				    0x524,
+				    0, 5,	/* M */
+				    8, 2,	/* P */
+				    24, 2,	/* mux */
+				    0);
 
 static const char * const mbus_parents[] = { "osc24M", "pll-periph0-2x",
 					     "pll-ddr0", "pll-periph0-4x" };

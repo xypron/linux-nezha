@@ -160,6 +160,8 @@ static struct ccu_div ahb1_clk = {
 
 		.var_predivs	= ahb1_predivs,
 		.n_var_predivs	= ARRAY_SIZE(ahb1_predivs),
+		.bypass_enabled	= true,
+		.bypass_index	= 1 /* osc24M */,
 	},
 
 	.common		= {
@@ -184,11 +186,12 @@ static SUNXI_CCU_DIV_TABLE(apb1_clk, "apb1", "ahb1",
 
 static const char * const apb2_parents[] = { "osc32k", "osc24M",
 					     "pll-periph0" , "pll-periph0" };
-static SUNXI_CCU_MP_WITH_MUX(apb2_clk, "apb2", apb2_parents, 0x058,
-			     0, 5,	/* M */
-			     16, 2,	/* P */
-			     24, 2,	/* mux */
-			     0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS(apb2_clk, "apb2",
+				    apb2_parents, 1 /* osc24M */, 0x058,
+				    0, 5,	/* M */
+				    16, 2,	/* P */
+				    24, 2,	/* mux */
+				    0);
 
 static const char * const ahb2_parents[] = { "ahb1" , "pll-periph0" };
 static const struct ccu_mux_fixed_prediv ahb2_fixed_predivs[] = {
@@ -200,6 +203,8 @@ static struct ccu_mux ahb2_clk = {
 		.width	= 1,
 		.fixed_predivs	= ahb2_fixed_predivs,
 		.n_predivs	= ARRAY_SIZE(ahb2_fixed_predivs),
+		.bypass_enabled	= true,
+		.bypass_index	= 0 /* ahb1 */,
 	},
 
 	.common		= {

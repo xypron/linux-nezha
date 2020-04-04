@@ -231,11 +231,12 @@ static SUNXI_CCU_DIV_TABLE(apb0_clk, "apb0", "ahb",
 			   0x054, 8, 2, apb0_div_table, 0);
 
 static const char * const apb1_parents[] = { "hosc", "pll-periph", "osc32k" };
-static SUNXI_CCU_MP_WITH_MUX(apb1_clk, "apb1", apb1_parents, 0x058,
-			     0, 5,	/* M */
-			     16, 2,	/* P */
-			     24, 2,	/* mux */
-			     0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS(apb1_clk, "apb1",
+				    apb1_parents, 0 /* hosc */, 0x058,
+				    0, 5,	/* M */
+				    16, 2,	/* P */
+				    24, 2,	/* mux */
+				    0);
 
 static SUNXI_CCU_GATE(axi_dram_clk,	"axi-dram",	"axi",
 		      0x05c, BIT(0), 0);
