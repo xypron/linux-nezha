@@ -711,12 +711,13 @@ static SUNXI_CCU_GATE(hdmi_slow_clk,	"hdmi-slow",	"osc24M",
  */
 static const char * const mbus_parents[] = { "osc24M", "pll-periph0-2x",
 					     "pll-ddr0" };
-static SUNXI_CCU_MP_WITH_MUX_GATE(mbus_clk, "mbus", mbus_parents, 0x15c,
-				  0, 4,		/* M */
-				  16, 2,	/* P */
-				  24, 2,	/* mux */
-				  BIT(31),	/* gate */
-				  CLK_IS_CRITICAL);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(mbus_clk, "mbus",
+					 mbus_parents, 0 /* osc24M */, 0x15c,
+					 0, 4,	  /* M */
+					 16, 2,	  /* P */
+					 24, 2,	  /* mux */
+					 BIT(31), /* gate */
+					 CLK_IS_CRITICAL);
 
 static const char * const dsi_dphy_parents[] = { "pll-video0", "pll-video1",
 						 "pll-periph0" };

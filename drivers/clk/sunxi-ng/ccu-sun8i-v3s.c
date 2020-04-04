@@ -366,8 +366,10 @@ static SUNXI_CCU_GATE(avs_clk,		"avs",		"osc24M",
 
 static const char * const mbus_parents[] = { "osc24M", "pll-periph0-2x",
 					     "pll-ddr" };
-static SUNXI_CCU_M_WITH_MUX_GATE(mbus_clk, "mbus", mbus_parents,
-				 0x15c, 0, 3, 24, 2, BIT(31), CLK_IS_CRITICAL);
+static SUNXI_CCU_M_WITH_MUX_BYPASS_GATE(mbus_clk, "mbus",
+					mbus_parents, 0 /* osc24M */,
+					0x15c, 0, 3, 24, 2, BIT(31),
+					CLK_IS_CRITICAL);
 
 static const char * const mipi_csi_parents[] = { "pll-video", "pll-periph0",
 						 "pll-isp" };

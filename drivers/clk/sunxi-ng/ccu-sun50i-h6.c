@@ -265,11 +265,12 @@ static SUNXI_CCU_MP_WITH_MUX(apb2_clk, "apb2", ahb3_apb1_apb2_parents, 0x524,
 
 static const char * const mbus_parents[] = { "osc24M", "pll-periph0-2x",
 					     "pll-ddr0", "pll-periph0-4x" };
-static SUNXI_CCU_M_WITH_MUX_GATE(mbus_clk, "mbus", mbus_parents, 0x540,
-				       0, 3,	/* M */
-				       24, 2,	/* mux */
-				       BIT(31),	/* gate */
-				       CLK_IS_CRITICAL);
+static SUNXI_CCU_M_WITH_MUX_BYPASS_GATE(mbus_clk, "mbus",
+					mbus_parents, 0 /* osc24M */, 0x540,
+				        0, 3,	 /* M */
+				        24, 2,	 /* mux */
+				        BIT(31), /* gate */
+				        CLK_IS_CRITICAL);
 
 static const char * const de_parents[] = { "pll-de", "pll-periph0-2x" };
 static SUNXI_CCU_M_WITH_MUX_GATE(de_clk, "de", de_parents, 0x600,

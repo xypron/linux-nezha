@@ -619,19 +619,21 @@ static SUNXI_CCU_GATE(ps_clk, "ps", "lcd1-ch1", 0x140, BIT(31), 0);
 
 static const char * const mbus_parents[] = { "osc24M", "pll-periph",
 					     "pll-ddr" };
-static SUNXI_CCU_MP_WITH_MUX_GATE(mbus0_clk, "mbus0", mbus_parents, 0x15c,
-				  0, 3,		/* M */
-				  16, 2,	/* P */
-				  24, 2,	/* mux */
-				  BIT(31),	/* gate */
-				  CLK_IS_CRITICAL);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(mbus0_clk, "mbus0",
+					 mbus_parents, 0 /* osc24M */, 0x15c,
+					 0, 3,	  /* M */
+					 16, 2,	  /* P */
+					 24, 2,	  /* mux */
+					 BIT(31), /* gate */
+					 CLK_IS_CRITICAL);
 
-static SUNXI_CCU_MP_WITH_MUX_GATE(mbus1_clk, "mbus1", mbus_parents, 0x160,
-				  0, 3,		/* M */
-				  16, 2,	/* P */
-				  24, 2,	/* mux */
-				  BIT(31),	/* gate */
-				  CLK_IS_CRITICAL);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(mbus1_clk, "mbus1",
+					 mbus_parents, 0 /* osc24M */, 0x160,
+					 0, 3,	  /* M */
+					 16, 2,	  /* P */
+					 24, 2,	  /* mux */
+					 BIT(31), /* gate */
+					 CLK_IS_CRITICAL);
 
 static SUNXI_CCU_M_WITH_MUX_GATE(mipi_dsi_clk, "mipi-dsi", lcd_ch1_parents,
 				 0x168, 16, 3, 24, 2, BIT(31),

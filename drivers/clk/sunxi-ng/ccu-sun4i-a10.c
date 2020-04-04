@@ -797,14 +797,16 @@ static SUNXI_CCU_M_WITH_MUX_TABLE_GATE(gpu_sun7i_clk, "gpu",
 
 static const char *const mbus_sun4i_parents[] = { "hosc", "pll-periph",
 						  "pll-ddr-other" };
-static SUNXI_CCU_MP_WITH_MUX_GATE(mbus_sun4i_clk, "mbus", mbus_sun4i_parents,
-				  0x15c, 0, 4, 16, 2, 24, 2, BIT(31),
-				  0);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(mbus_sun4i_clk, "mbus",
+					 mbus_sun4i_parents, 0 /* hosc */,
+					 0x15c, 0, 4, 16, 2, 24, 2, BIT(31),
+					 0);
 static const char *const mbus_sun7i_parents[] = { "hosc", "pll-periph-base",
 						  "pll-ddr-other" };
-static SUNXI_CCU_MP_WITH_MUX_GATE(mbus_sun7i_clk, "mbus", mbus_sun7i_parents,
-				  0x15c, 0, 4, 16, 2, 24, 2, BIT(31),
-				  CLK_IS_CRITICAL);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(mbus_sun7i_clk, "mbus",
+					 mbus_sun7i_parents, 0 /* hosc */,
+					 0x15c, 0, 4, 16, 2, 24, 2, BIT(31),
+					 CLK_IS_CRITICAL);
 
 static SUNXI_CCU_GATE(hdmi1_slow_clk, "hdmi1-slow", "hosc", 0x178, BIT(31), 0);
 

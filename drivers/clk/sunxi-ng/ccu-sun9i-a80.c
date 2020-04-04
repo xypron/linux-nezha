@@ -257,8 +257,9 @@ static SUNXI_CCU_DIV_TABLE(axi1_clk, "axi1", "c1cpux",
 
 static const char * const gtbus_parents[] = { "osc24M", "pll-periph0",
 					      "pll-periph1", "pll-periph1" };
-static SUNXI_CCU_M_WITH_MUX(gtbus_clk, "gtbus", gtbus_parents,
-			    0x05c, 0, 2, 24, 2, CLK_IS_CRITICAL);
+static SUNXI_CCU_M_WITH_MUX_BYPASS(gtbus_clk, "gtbus",
+				   gtbus_parents, 0 /* osc24M */,
+				   0x05c, 0, 2, 24, 2, CLK_IS_CRITICAL);
 
 static const char * const ahb_parents[] = { "gtbus", "pll-periph0",
 					    "pll-periph1", "pll-periph1" };

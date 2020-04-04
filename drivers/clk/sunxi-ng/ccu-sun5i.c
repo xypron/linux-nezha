@@ -502,8 +502,10 @@ static SUNXI_CCU_M_WITH_MUX_GATE(gpu_clk, "gpu", gpu_parents,
 				 0x154, 0, 4, 24, 3, BIT(31), 0);
 
 static const char * const mbus_parents[] = { "hosc", "pll-periph", "pll-ddr" };
-static SUNXI_CCU_MP_WITH_MUX_GATE(mbus_clk, "mbus", mbus_parents,
-				  0x15c, 0, 4, 16, 2, 24, 2, BIT(31), CLK_IS_CRITICAL);
+static SUNXI_CCU_MP_WITH_MUX_BYPASS_GATE(mbus_clk, "mbus",
+					 mbus_parents, 0 /* hosc */,
+					 0x15c, 0, 4, 16, 2, 24, 2, BIT(31),
+					 CLK_IS_CRITICAL);
 
 static SUNXI_CCU_GATE(iep_clk,		"iep",		"de-be",
 		      0x160, BIT(31), 0);
