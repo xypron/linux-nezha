@@ -61,7 +61,7 @@ int syscore_suspend(void)
 
 	list_for_each_entry_reverse(ops, &syscore_ops_list, node)
 		if (ops->suspend) {
-			if (initcall_debug)
+			if (pm_print_times_enabled)
 				pr_info("PM: Calling %pS\n", ops->suspend);
 			ret = ops->suspend();
 			if (ret)
@@ -99,7 +99,7 @@ void syscore_resume(void)
 
 	list_for_each_entry(ops, &syscore_ops_list, node)
 		if (ops->resume) {
-			if (initcall_debug)
+			if (pm_print_times_enabled)
 				pr_info("PM: Calling %pS\n", ops->resume);
 			ops->resume();
 			WARN_ONCE(!irqs_disabled(),

@@ -6,6 +6,7 @@
  */
 
 #include <linux/irq.h>
+#include <linux/irqdomain.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/suspend.h>
@@ -69,12 +70,24 @@ void irq_pm_remove_action(struct irq_desc *desc, struct irqaction *action)
 
 static bool suspend_device_irq(struct irq_desc *desc)
 {
+	struct irq_data *d = &desc->irq_data;
+
 	if (!desc->action || irq_desc_is_chained(desc) ||
-	    desc->no_suspend_depth)
+	    desc->no_suspend_depth) {
+		if (pm_print_times_enabled)
+		pr_info("not suspending IRQ %s:%ld (%s)\n",
+			d->domain ? d->domain->name : d->chip->name,
+			d->hwirq,
+			irq_desc_is_chained(desc) ? "chained" : "skipped");
 		return false;
+	}
 
 	if (irqd_is_wakeup_set(&desc->irq_data)) {
 		irqd_set(&desc->irq_data, IRQD_WAKEUP_ARMED);
+		if (pm_print_times_enabled)
+		pr_info("armed wakeup IRQ %s:%ld\n",
+			d->domain ? d->domain->name : d->chip->name,
+			d->hwirq);
 		/*
 		 * We return true here to force the caller to issue
 		 * synchronize_irq(). We need to make sure that the
@@ -93,8 +106,18 @@ static bool suspend_device_irq(struct irq_desc *desc)
 	 * chip level. The chip implementation indicates that with
 	 * IRQCHIP_MASK_ON_SUSPEND.
 	 */
-	if (irq_desc_get_chip(desc)->flags & IRQCHIP_MASK_ON_SUSPEND)
+	if (irq_desc_get_chip(desc)->flags & IRQCHIP_MASK_ON_SUSPEND) {
 		mask_irq(desc);
+		if (pm_print_times_enabled)
+		pr_info("suspended + masked IRQ %s:%ld\n",
+			d->domain ? d->domain->name : d->chip->name,
+			d->hwirq);
+	} else {
+		if (pm_print_times_enabled)
+		pr_info("suspended IRQ %s:%ld\n",
+			d->domain ? d->domain->name : d->chip->name,
+			d->hwirq);
+	}
 	return true;
 }
 
@@ -120,11 +143,17 @@ void suspend_device_irqs(void)
 	int irq;
 
 	for_each_irq_desc(irq, desc) {
+		struct irq_data *d = &desc->irq_data;
 		unsigned long flags;
 		bool sync;
 
-		if (irq_settings_is_nested_thread(desc))
+		if (irq_settings_is_nested_thread(desc)) {
+			if (pm_print_times_enabled)
+			pr_info("not suspending IRQ %s:%ld (nested thread)\n",
+				d->domain ? d->domain->name : d->chip->name,
+				d->hwirq);
 			continue;
+		}
 		raw_spin_lock_irqsave(&desc->lock, flags);
 		sync = suspend_device_irq(desc);
 		raw_spin_unlock_irqrestore(&desc->lock, flags);
