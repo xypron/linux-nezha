@@ -49,9 +49,22 @@ struct axp20x_ac_power {
 	unsigned int irqs[];
 };
 
+static const char * const axp20x_irq_names[];
+
 static irqreturn_t axp20x_ac_power_irq(int irq, void *devid)
 {
 	struct axp20x_ac_power *power = devid;
+	const char *name = "unknown AC";
+	int i;
+
+	for (i = 0; i < power->num_irqs; ++i) {
+		if (power->irqs[i] == irq) {
+			name = axp20x_irq_names[i];
+			break;
+		}
+	}
+
+	dev_notice(power->supply->dev.parent, "Got %s IRQ\n", name);
 
 	power_supply_changed(power->supply);
 

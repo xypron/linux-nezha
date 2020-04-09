@@ -208,6 +208,9 @@ static irqreturn_t axp20x_pek_irq(int irq, void *pwr)
 	struct input_dev *idev = pwr;
 	struct axp20x_pek *axp20x_pek = input_get_drvdata(idev);
 
+	dev_notice(&idev->dev, "Got PEK %s IRQ",
+		   irq == axp20x_pek->irq_dbf ? "dbf" : "dbr");
+
 	/*
 	 * The power-button is connected to ground so a falling edge (dbf)
 	 * means it is pressed.

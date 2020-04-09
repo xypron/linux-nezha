@@ -16,7 +16,12 @@
 
 bool irq_pm_check_wakeup(struct irq_desc *desc)
 {
+	struct irq_data *d = &desc->irq_data;
+
 	if (irqd_is_wakeup_armed(&desc->irq_data)) {
+		pr_notice("Got wakeup IRQ %s:%ld\n",
+			  d->domain ? d->domain->name : d->chip->name,
+			  d->hwirq);
 		irqd_clear(&desc->irq_data, IRQD_WAKEUP_ARMED);
 		desc->istate |= IRQS_SUSPENDED | IRQS_PENDING;
 		desc->depth++;

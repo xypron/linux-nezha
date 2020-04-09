@@ -512,6 +512,7 @@ int device_init_wakeup(struct device *dev, bool enable)
 	if (!dev)
 		return -EINVAL;
 
+	dev_alert(dev, "INIT WAKEUP %s\n", enable ? "on" : "off");
 	if (enable) {
 		device_set_wakeup_capable(dev, true);
 		ret = device_wakeup_enable(dev);
