@@ -1657,6 +1657,7 @@ static int _regmap_raw_write_impl(struct regmap *map, unsigned int reg,
 			}
 		}
 		if (map->cache_only) {
+			dev_warn(map->dev, "dirty write ** -> %02x\n", reg);
 			map->cache_dirty = true;
 			return 0;
 		}
@@ -1919,6 +1920,7 @@ int _regmap_write(struct regmap *map, unsigned int reg,
 		if (ret != 0)
 			return ret;
 		if (map->cache_only) {
+			dev_warn(map->dev, "dirty write %02x -> %02x\n", val, reg);
 			map->cache_dirty = true;
 			return 0;
 		}
@@ -2459,6 +2461,8 @@ static int _regmap_multi_reg_write(struct regmap *map,
 								reg, ret);
 				return ret;
 			}
+			if (map->cache_only)
+				dev_warn(map->dev, "dirty write %02x -> %02x\n", val, reg);
 		}
 		if (map->cache_only) {
 			map->cache_dirty = true;
@@ -2683,8 +2687,10 @@ static int _regmap_read(struct regmap *map, unsigned int reg,
 			return 0;
 	}
 
-	if (map->cache_only)
+	if (map->cache_only) {
+		dev_warn(map->dev, "cache only read! %02x\n", reg);
 		return -EBUSY;
+	}
 
 	if (!regmap_readable(map, reg))
 		return -EIO;
