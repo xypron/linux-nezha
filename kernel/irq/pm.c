@@ -6,6 +6,7 @@
  */
 
 #include <linux/irq.h>
+#include <linux/irqdomain.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/suspend.h>
@@ -71,13 +72,19 @@ static bool suspend_device_irq(struct irq_desc *desc)
 {
 	unsigned long chipflags = irq_desc_get_chip(desc)->flags;
 	struct irq_data *irqd = &desc->irq_data;
+	const char *dn = irqd->domain ? irqd->domain->name : irqd->chip->name;
 
 	if (!desc->action || irq_desc_is_chained(desc) ||
-	    desc->no_suspend_depth)
+	    desc->no_suspend_depth) {
+		pm_pr_dbg("not suspending IRQ %s:%ld (%s)\n",
+			  dn, irqd->hwirq,
+			  irq_desc_is_chained(desc) ? "chained" : "skipped");
 		return false;
+	}
 
 	if (irqd_is_wakeup_set(irqd)) {
 		irqd_set(irqd, IRQD_WAKEUP_ARMED);
+		pm_pr_dbg("armed wakeup IRQ %s:%ld\n", dn, d->hwirq);
 
 		if ((chipflags & IRQCHIP_ENABLE_WAKEUP_ON_SUSPEND) &&
 		     irqd_irq_disabled(irqd)) {
@@ -107,8 +114,12 @@ static bool suspend_device_irq(struct irq_desc *desc)
 	 * chip level. The chip implementation indicates that with
 	 * IRQCHIP_MASK_ON_SUSPEND.
 	 */
-	if (chipflags & IRQCHIP_MASK_ON_SUSPEND)
+	if (chipflags & IRQCHIP_MASK_ON_SUSPEND) {
 		mask_irq(desc);
+		pm_prd_dbg("suspended + masked IRQ %s:%ld\n", dn, d->hwirq);
+	} else {
+		pm_prd_dbg("suspended IRQ %s:%ld\n", dn, d->hwirq);
+	}
 	return true;
 }
 
@@ -134,11 +145,16 @@ void suspend_device_irqs(void)
 	int irq;
 
 	for_each_irq_desc(irq, desc) {
+		struct irq_data *d = &desc->irq_data;
 		unsigned long flags;
 		bool sync;
 
-		if (irq_settings_is_nested_thread(desc))
+		if (irq_settings_is_nested_thread(desc)) {
+			pm_pr_dbg("not suspending IRQ %s:%ld (nested thread)\n",
+				  d->domain ? d->domain->name : d->chip->name,
+				  d->hwirq);
 			continue;
+		}
 		raw_spin_lock_irqsave(&desc->lock, flags);
 		sync = suspend_device_irq(desc);
 		raw_spin_unlock_irqrestore(&desc->lock, flags);
