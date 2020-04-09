@@ -98,9 +98,22 @@ static bool axp20x_usb_vbus_needs_polling(struct axp20x_usb_power *power)
 	return false;
 }
 
+static const char * const axp22x_irq_names[];
+
 static irqreturn_t axp20x_usb_power_irq(int irq, void *devid)
 {
 	struct axp20x_usb_power *power = devid;
+	const char *name = "unknown USB";
+	int i;
+
+	for (i = 0; i < power->num_irqs; ++i) {
+		if (power->irqs[i] == irq) {
+			name = axp22x_irq_names[i];
+			break;
+		}
+	}
+
+	dev_notice(power->supply->dev.parent, "Got %s IRQ\n", name);
 
 	power_supply_changed(power->supply);
 
