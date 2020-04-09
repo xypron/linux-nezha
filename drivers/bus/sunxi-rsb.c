@@ -34,6 +34,7 @@
  *
  */
 
+#define DEBUG
 #include <linux/clk.h>
 #include <linux/clk/clk-conf.h>
 #include <linux/device.h>
