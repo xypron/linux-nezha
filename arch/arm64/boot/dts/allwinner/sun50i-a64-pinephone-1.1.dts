@@ -28,3 +28,7 @@
 	num-interpolated-steps = <50>;
 	default-brightness-level = <400>;
 };
+
+&codec_analog {
+	allwinner,internal-bias-resistor;
+};
