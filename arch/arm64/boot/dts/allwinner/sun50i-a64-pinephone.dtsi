@@ -286,6 +286,7 @@
 };
 
 &i2c0 {
+	clock-frequency = <400000>;
 	status = "okay";
 
 	anx7688: hdmi-bridge@28 {
@@ -328,6 +329,7 @@
 };
 
 &i2c1 {
+	clock-frequency = <400000>;
 	status = "okay";
 
 	/* Magnetometer */
