@@ -440,7 +440,6 @@ static const struct drm_panel_funcs pinephone_funcs = {
 static int pinephone_dsi_probe(struct mipi_dsi_device *dsi)
 {
 	struct pinephone *ctx;
-	int ret;
 
 	ctx = devm_kzalloc(&dsi->dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
@@ -480,10 +479,8 @@ static int pinephone_dsi_probe(struct mipi_dsi_device *dsi)
 	if (IS_ERR(ctx->backlight))
 		return PTR_ERR(ctx->backlight);
 
-	ret = drm_panel_add(&ctx->panel);
-	if (ret < 0) {
-		return ret;
-	}
+	drm_panel_add(&ctx->panel);
+
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->lanes = 4;
