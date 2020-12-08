@@ -22,6 +22,9 @@
 #define SUN50I_H6_NVMEM_MASK		0x7
 #define SUN50I_H6_NVMEM_SHIFT		5
 
+#define SUN50I_A100_NVMEM_MASK		0xf
+#define SUN50I_A100_NVMEM_SHIFT		12
+
 struct sunxi_cpufreq_soc_data {
 	int (*efuse_xlate)(struct nvmem_cell *speedbin_nvmem);
 };
@@ -38,7 +41,7 @@ static int sun50i_h6_efuse_xlate(struct nvmem_cell *speedbin_nvmem)
 	if (IS_ERR(speedbin))
 		return PTR_ERR(speedbin);
 
-	efuse_value = (*(u32 *)speedbin >> SUN50I_H6_NVMEM_SHIFT) &
+	efuse_value = (*speedbin >> SUN50I_H6_NVMEM_SHIFT) &
 			  SUN50I_H6_NVMEM_MASK;
 	kfree(speedbin);
 	/*
@@ -50,6 +53,30 @@ static int sun50i_h6_efuse_xlate(struct nvmem_cell *speedbin_nvmem)
 		return efuse_value - 1;
 	else
 		return 0;
+}
+
+static int sun50i_a100_efuse_xlate(struct nvmem_cell *speedbin_nvmem)
+{
+	size_t len;
+	u16 *speedbin;
+	u16 efuse_value;
+
+	speedbin = nvmem_cell_read(speedbin_nvmem, &len);
+	if (IS_ERR(speedbin))
+		return PTR_ERR(speedbin);
+
+	efuse_value = (*speedbin >> SUN50I_A100_NVMEM_SHIFT) &
+			  SUN50I_A100_NVMEM_MASK;
+	kfree(speedbin);
+
+	switch (efuse_value) {
+	case 0b100:
+		return 2;
+	case 0b010:
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 /**
@@ -184,8 +211,13 @@ static const struct sunxi_cpufreq_soc_data sun50i_h6_data = {
 	.efuse_xlate = sun50i_h6_efuse_xlate,
 };
 
+static const struct sunxi_cpufreq_soc_data sun50i_a100_data = {
+	.efuse_xlate = sun50i_a100_efuse_xlate,
+};
+
 static const struct of_device_id sun50i_cpufreq_match_list[] = {
 	{ .compatible = "allwinner,sun50i-h6", .data = &sun50i_h6_data },
+	{ .compatible = "allwinner,sun50i-a100", .data = &sun50i_a100_data },
 	{}
 };
 MODULE_DEVICE_TABLE(of, sun50i_cpufreq_match_list);
