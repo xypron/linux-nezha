@@ -1299,13 +1299,15 @@ static const struct of_device_id sun8i_dwmac_match[] = {
 };
 MODULE_DEVICE_TABLE(of, sun8i_dwmac_match);
 
+static SIMPLE_DEV_PM_OPS(sun8i_dwmac_pm_ops, stmmac_suspend, stmmac_resume);
+
 static struct platform_driver sun8i_dwmac_driver = {
 	.probe  = sun8i_dwmac_probe,
 	.remove = stmmac_pltfr_remove,
 	.shutdown = sun8i_dwmac_shutdown,
 	.driver = {
 		.name           = "dwmac-sun8i",
-		.pm		= &stmmac_pltfr_pm_ops,
+		.pm		= &sun8i_dwmac_pm_ops,
 		.of_match_table = sun8i_dwmac_match,
 	},
 };
