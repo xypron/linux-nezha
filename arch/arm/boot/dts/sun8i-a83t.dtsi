@@ -446,6 +446,9 @@
 			compatible = "allwinner,sun8i-a83t-system-controller",
 				"syscon";
 			reg = <0x01c00000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			sram_a2: sram@40000 {
 				compatible = "mmio-sram";
