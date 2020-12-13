@@ -15,6 +15,7 @@
 #define CLK_R_APB1_PWM		6
 #define CLK_R_APB2_UART		7
 #define CLK_R_APB2_I2C		8
+#define CLK_R_APB2_RSB		13
 #define CLK_R_APB1_IR		9
 #define CLK_R_APB1_W1		10
 

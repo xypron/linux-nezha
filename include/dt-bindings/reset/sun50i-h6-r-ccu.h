@@ -11,6 +11,7 @@
 #define RST_R_APB1_PWM		2
 #define RST_R_APB2_UART		3
 #define RST_R_APB2_I2C		4
+#define RST_R_APB2_RSB		7
 #define RST_R_APB1_IR		5
 #define RST_R_APB1_W1		6
 
