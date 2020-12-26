@@ -12,15 +12,19 @@
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/input.h>
 #include <linux/io.h>
+#include <linux/irq.h>
 #include <linux/of_device.h>
 #include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <linux/log2.h>
 
+#include <sound/jack.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
+#include <sound/tlv.h>
 
 #define SUN8I_SYSCLK_CTL				0x00c
 #define SUN8I_SYSCLK_CTL_AIF1CLK_ENA			11
@@ -72,6 +76,12 @@
 #define SUN8I_AIF1_MXR_SRC_AD0R_MXR_SRC_AIF2DACR	10
 #define SUN8I_AIF1_MXR_SRC_AD0R_MXR_SRC_ADCR		9
 #define SUN8I_AIF1_MXR_SRC_AD0R_MXR_SRC_AIF2DACL	8
+#define SUN8I_AIF1_VOL_CTRL1				0x050
+#define SUN8I_AIF1_VOL_CTRL1_AD0L_VOL			8
+#define SUN8I_AIF1_VOL_CTRL1_AD0R_VOL			0
+#define SUN8I_AIF1_VOL_CTRL3				0x058
+#define SUN8I_AIF1_VOL_CTRL3_DA0L_VOL			8
+#define SUN8I_AIF1_VOL_CTRL3_DA0R_VOL			0
 #define SUN8I_AIF2_ADCDAT_CTRL				0x084
 #define SUN8I_AIF2_ADCDAT_CTRL_AIF2_ADCL_ENA		15
 #define SUN8I_AIF2_ADCDAT_CTRL_AIF2_ADCR_ENA		14
@@ -91,6 +101,12 @@
 #define SUN8I_AIF2_MXR_SRC_ADCR_MXR_SRC_AIF1DA1R	10
 #define SUN8I_AIF2_MXR_SRC_ADCR_MXR_SRC_AIF2DACL	9
 #define SUN8I_AIF2_MXR_SRC_ADCR_MXR_SRC_ADCR		8
+#define SUN8I_AIF2_VOL_CTRL1				0x090
+#define SUN8I_AIF2_VOL_CTRL1_ADCL_VOL			8
+#define SUN8I_AIF2_VOL_CTRL1_ADCR_VOL			0
+#define SUN8I_AIF2_VOL_CTRL2				0x098
+#define SUN8I_AIF2_VOL_CTRL2_DACL_VOL			8
+#define SUN8I_AIF2_VOL_CTRL2_DACR_VOL			0
 #define SUN8I_AIF3_CLK_CTRL_AIF3_CLK_SRC_AIF1		(0x0 << 0)
 #define SUN8I_AIF3_CLK_CTRL_AIF3_CLK_SRC_AIF2		(0x1 << 0)
 #define SUN8I_AIF3_CLK_CTRL_AIF3_CLK_SRC_AIF1CLK	(0x2 << 0)
@@ -102,8 +118,27 @@
 #define SUN8I_ADC_DIG_CTRL_ENAD				15
 #define SUN8I_ADC_DIG_CTRL_ADOUT_DTS			2
 #define SUN8I_ADC_DIG_CTRL_ADOUT_DLY			1
+#define SUN8I_ADC_VOL_CTRL				0x104
+#define SUN8I_ADC_VOL_CTRL_ADCL_VOL			8
+#define SUN8I_ADC_VOL_CTRL_ADCR_VOL			0
+#define SUN8I_HMIC_CTRL1				0x110
+#define SUN8I_HMIC_CTRL1_HMIC_N				8
+#define SUN8I_HMIC_CTRL1_JACK_OUT_IRQ_EN		4
+#define SUN8I_HMIC_CTRL1_JACK_IN_IRQ_EN			3
+#define SUN8I_HMIC_CTRL1_HMIC_DATA_IRQ_EN		0
+#define SUN8I_HMIC_CTRL2				0x114
+#define SUN8I_HMIC_CTRL2_HMIC_SAMPLE			14
+#define SUN8I_HMIC_CTRL2_HMIC_SF			6
+#define SUN8I_HMIC_STS					0x118
+#define SUN8I_HMIC_STS_HMIC_DATA			8
+#define SUN8I_HMIC_STS_JACK_OUT_IRQ_ST			4
+#define SUN8I_HMIC_STS_JACK_IN_IRQ_ST			3
+#define SUN8I_HMIC_STS_HMIC_DATA_IRQ_ST			0
 #define SUN8I_DAC_DIG_CTRL				0x120
 #define SUN8I_DAC_DIG_CTRL_ENDA				15
+#define SUN8I_DAC_VOL_CTRL				0x124
+#define SUN8I_DAC_VOL_CTRL_DACL_VOL			8
+#define SUN8I_DAC_VOL_CTRL_DACR_VOL			0
 #define SUN8I_DAC_MXR_SRC				0x130
 #define SUN8I_DAC_MXR_SRC_DACL_MXR_SRC_AIF1DA0L		15
 #define SUN8I_DAC_MXR_SRC_DACL_MXR_SRC_AIF1DA1L		14
@@ -124,6 +159,14 @@
 #define SUN8I_AIF_CLK_CTRL_WORD_SIZ_MASK	GENMASK(5, 4)
 #define SUN8I_AIF_CLK_CTRL_DATA_FMT_MASK	GENMASK(3, 2)
 #define SUN8I_AIF3_CLK_CTRL_AIF3_CLK_SRC_MASK	GENMASK(1, 0)
+#define SUN8I_HMIC_CTRL1_HMIC_N_MASK		GENMASK(11, 8)
+#define SUN8I_HMIC_CTRL2_HMIC_SAMPLE_MASK	GENMASK(15, 14)
+#define SUN8I_HMIC_CTRL2_HMIC_SF_MASK		GENMASK(7, 6)
+#define SUN8I_HMIC_STS_HMIC_DATA_MASK		GENMASK(12, 8)
+
+#define SUN8I_CODEC_BUTTONS	(SND_JACK_BTN_0|\
+				 SND_JACK_BTN_1|\
+				 SND_JACK_BTN_2)
 
 #define SUN8I_CODEC_PASSTHROUGH_SAMPLE_RATE 48000
 
@@ -158,15 +201,24 @@ struct sun8i_codec_aif {
 };
 
 struct sun8i_codec_quirks {
-	bool legacy_widgets	: 1;
-	bool lrck_inversion	: 1;
+	bool	bus_clock	: 1;
+	bool	jack_detection	: 1;
+	bool	legacy_widgets	: 1;
+	bool	lrck_inversion	: 1;
 };
 
 struct sun8i_codec {
 	struct regmap			*regmap;
+	struct snd_soc_card		*card;
+	struct clk			*clk_bus;
 	struct clk			*clk_module;
 	const struct sun8i_codec_quirks	*quirks;
 	struct sun8i_codec_aif		aifs[SUN8I_CODEC_NAIFS];
+	struct snd_soc_jack		jack;
+	struct delayed_work		jack_work;
+	int				jack_irq;
+	int				jack_pending;
+	int				jack_type;
 	unsigned int			sysclk_rate;
 	int				sysclk_refcnt;
 };
@@ -177,6 +229,14 @@ static int sun8i_codec_runtime_resume(struct device *dev)
 {
 	struct sun8i_codec *scodec = dev_get_drvdata(dev);
 	int ret;
+
+	if (scodec->clk_bus) {
+		ret = clk_prepare_enable(scodec->clk_bus);
+		if (ret) {
+			dev_err(dev, "Failed to enable the bus clock\n");
+			return ret;
+		}
+	}
 
 	regcache_cache_only(scodec->regmap, false);
 
@@ -195,6 +255,9 @@ static int sun8i_codec_runtime_suspend(struct device *dev)
 
 	regcache_cache_only(scodec->regmap, true);
 	regcache_mark_dirty(scodec->regmap);
+
+	if (scodec->clk_bus)
+		clk_disable_unprepare(scodec->clk_bus);
 
 	return 0;
 }
@@ -696,6 +759,41 @@ static struct snd_soc_dai_driver sun8i_codec_dais[] = {
 	},
 };
 
+static const DECLARE_TLV_DB_SCALE(sun8i_codec_vol_scale, -12000, 75, 1);
+
+static const struct snd_kcontrol_new sun8i_codec_controls[] = {
+	SOC_DOUBLE_TLV("AIF1 AD0 Capture Volume",
+		       SUN8I_AIF1_VOL_CTRL1,
+		       SUN8I_AIF1_VOL_CTRL1_AD0L_VOL,
+		       SUN8I_AIF1_VOL_CTRL1_AD0R_VOL,
+		       0xc0, 0, sun8i_codec_vol_scale),
+	SOC_DOUBLE_TLV("AIF1 DA0 Playback Volume",
+		       SUN8I_AIF1_VOL_CTRL3,
+		       SUN8I_AIF1_VOL_CTRL3_DA0L_VOL,
+		       SUN8I_AIF1_VOL_CTRL3_DA0R_VOL,
+		       0xc0, 0, sun8i_codec_vol_scale),
+	SOC_DOUBLE_TLV("AIF2 ADC Capture Volume",
+		       SUN8I_AIF2_VOL_CTRL1,
+		       SUN8I_AIF2_VOL_CTRL1_ADCL_VOL,
+		       SUN8I_AIF2_VOL_CTRL1_ADCR_VOL,
+		       0xc0, 0, sun8i_codec_vol_scale),
+	SOC_DOUBLE_TLV("AIF2 DAC Playback Volume",
+		       SUN8I_AIF2_VOL_CTRL2,
+		       SUN8I_AIF2_VOL_CTRL2_DACL_VOL,
+		       SUN8I_AIF2_VOL_CTRL2_DACR_VOL,
+		       0xc0, 0, sun8i_codec_vol_scale),
+	SOC_DOUBLE_TLV("ADC Capture Volume",
+		       SUN8I_ADC_VOL_CTRL,
+		       SUN8I_ADC_VOL_CTRL_ADCL_VOL,
+		       SUN8I_ADC_VOL_CTRL_ADCR_VOL,
+		       0xc0, 0, sun8i_codec_vol_scale),
+	SOC_DOUBLE_TLV("DAC Playback Volume",
+		       SUN8I_DAC_VOL_CTRL,
+		       SUN8I_DAC_VOL_CTRL_DACL_VOL,
+		       SUN8I_DAC_VOL_CTRL_DACR_VOL,
+		       0xc0, 0, sun8i_codec_vol_scale),
+};
+
 static int sun8i_codec_aif_event(struct snd_soc_dapm_widget *w,
 				 struct snd_kcontrol *kcontrol, int event)
 {
@@ -1172,11 +1270,77 @@ static const struct snd_soc_dapm_route sun8i_codec_legacy_routes[] = {
 	{ "AIF1 Slot 0 Right", NULL, "DACR" },
 };
 
+static struct snd_soc_jack_pin sun8i_codec_jack_pins[] = {
+	{
+		.pin	= "Headphone Jack",
+		.mask	= SND_JACK_HEADPHONE,
+	},
+	{
+		.pin	= "Headset Microphone",
+		.mask	= SND_JACK_MICROPHONE,
+	},
+};
+
+static int sun8i_codec_jack_init(struct sun8i_codec *scodec)
+{
+	int pins = 0;
+	int type = 0;
+	int i, ret;
+
+	for (i = 0; i < ARRAY_SIZE(sun8i_codec_jack_pins); ++i) {
+		struct snd_soc_jack_pin *pin = &sun8i_codec_jack_pins[i];
+		struct snd_soc_dapm_widget *w;
+
+		for_each_card_widgets(scodec->card, w) {
+			if (!strcmp(pin->pin, w->name)) {
+				pins |= BIT(i);
+				type |= pin->mask;
+				break;
+			}
+		}
+	}
+
+	if (!type)
+		return 0;
+
+	if (type & SND_JACK_MICROPHONE)
+		type |= SUN8I_CODEC_BUTTONS;
+
+	ret = snd_soc_card_jack_new(scodec->card, "Headset Jack", type,
+				    &scodec->jack, NULL, 0);
+	if (ret)
+		return ret;
+
+	for (i = 0; i < ARRAY_SIZE(sun8i_codec_jack_pins); ++i) {
+		struct snd_soc_jack_pin *pin = &sun8i_codec_jack_pins[i];
+
+		if (pins & BIT(i)) {
+			ret = snd_soc_jack_add_pins(&scodec->jack, 1, pin);
+			if (ret)
+				return ret;
+		}
+	}
+
+	if (type & SND_JACK_MICROPHONE) {
+		struct snd_jack *jack = scodec->jack.jack;
+
+		snd_jack_set_key(jack, SND_JACK_BTN_0, KEY_PLAYPAUSE);
+		snd_jack_set_key(jack, SND_JACK_BTN_1, KEY_VOLUMEUP);
+		snd_jack_set_key(jack, SND_JACK_BTN_2, KEY_VOLUMEDOWN);
+	}
+
+	scodec->jack_type = type;
+
+	return 0;
+}
+
 static int sun8i_codec_component_probe(struct snd_soc_component *component)
 {
 	struct snd_soc_dapm_context *dapm = snd_soc_component_get_dapm(component);
 	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(component);
 	int ret;
+
+	scodec->card = component->card;
 
 	/* Add widgets for backward compatibility with old device trees. */
 	if (scodec->quirks->legacy_widgets) {
@@ -1211,28 +1375,186 @@ static int sun8i_codec_component_probe(struct snd_soc_component *component)
 	/* Program the default sample rate. */
 	sun8i_codec_update_sample_rate(scodec);
 
+	if (scodec->quirks->jack_detection) {
+		ret = sun8i_codec_jack_init(scodec);
+		if (ret)
+			return ret;
+	}
+
+	if (scodec->jack_type) {
+		int irq_mask = BIT(SUN8I_HMIC_CTRL1_JACK_OUT_IRQ_EN) |
+			       BIT(SUN8I_HMIC_CTRL1_JACK_IN_IRQ_EN);
+
+		/* Reserved value required for jack IRQs to trigger. */
+		regmap_update_bits(scodec->regmap, SUN8I_HMIC_CTRL1,
+				   SUN8I_HMIC_CTRL1_HMIC_N_MASK,
+				   0xf << SUN8I_HMIC_CTRL1_HMIC_N);
+
+		/* Sample the ADC at 64 Hz; average across 2 samples. */
+		regmap_update_bits(scodec->regmap, SUN8I_HMIC_CTRL2,
+				   SUN8I_HMIC_CTRL2_HMIC_SAMPLE_MASK |
+				   SUN8I_HMIC_CTRL2_HMIC_SF_MASK,
+				   0x1 << SUN8I_HMIC_CTRL2_HMIC_SAMPLE |
+				   0x1 << SUN8I_HMIC_CTRL2_HMIC_SF);
+
+		regmap_update_bits(scodec->regmap, SUN8I_HMIC_CTRL1,
+				   irq_mask, irq_mask);
+
+		enable_irq(scodec->jack_irq);
+	}
+
 	return 0;
 }
 
+static void sun8i_codec_component_remove(struct snd_soc_component *component)
+{
+	struct sun8i_codec *scodec = snd_soc_component_get_drvdata(component);
+
+	if (scodec->jack_type) {
+		int irq_mask = BIT(SUN8I_HMIC_CTRL1_JACK_OUT_IRQ_EN) |
+			       BIT(SUN8I_HMIC_CTRL1_JACK_IN_IRQ_EN)  |
+			       BIT(SUN8I_HMIC_CTRL1_HMIC_DATA_IRQ_EN);
+
+		disable_irq(scodec->jack_irq);
+		cancel_delayed_work_sync(&scodec->jack_work);
+
+		regmap_update_bits(scodec->regmap, SUN8I_HMIC_CTRL1,
+				   irq_mask, 0);
+	}
+}
+
 static const struct snd_soc_component_driver sun8i_soc_component = {
+	.controls		= sun8i_codec_controls,
+	.num_controls		= ARRAY_SIZE(sun8i_codec_controls),
 	.dapm_widgets		= sun8i_codec_dapm_widgets,
 	.num_dapm_widgets	= ARRAY_SIZE(sun8i_codec_dapm_widgets),
 	.dapm_routes		= sun8i_codec_dapm_routes,
 	.num_dapm_routes	= ARRAY_SIZE(sun8i_codec_dapm_routes),
 	.probe			= sun8i_codec_component_probe,
+	.remove			= sun8i_codec_component_remove,
 	.idle_bias_on		= 1,
+	.suspend_bias_off	= 1,
 	.endianness		= 1,
 	.non_legacy_dai_naming	= 1,
 };
+
+static bool sun8i_codec_volatile_reg(struct device *dev, unsigned int reg)
+{
+	return reg == SUN8I_HMIC_STS;
+}
 
 static const struct regmap_config sun8i_codec_regmap_config = {
 	.reg_bits	= 32,
 	.reg_stride	= 4,
 	.val_bits	= 32,
+	.volatile_reg	= sun8i_codec_volatile_reg,
 	.max_register	= SUN8I_DAC_MXR_SRC,
 
 	.cache_type	= REGCACHE_FLAT,
 };
+
+static int sun8i_codec_read_hmic_button(struct sun8i_codec *scodec)
+{
+	unsigned int value;
+	int button;
+
+	regmap_read(scodec->regmap, SUN8I_HMIC_STS, &value);
+	value  &= SUN8I_HMIC_STS_HMIC_DATA_MASK;
+	value >>= SUN8I_HMIC_STS_HMIC_DATA;
+
+	if (value < 0x2)
+		button = SND_JACK_BTN_0;
+	else if (value < 0x7)
+		button = SND_JACK_BTN_1;
+	else if (value < 0x10)
+		button = SND_JACK_BTN_2;
+	else
+		button = 0;
+
+	dev_dbg(scodec->card->dev, "HMIC ADC read %u => %#x\n", value, button);
+
+	return button;
+}
+
+static void sun8i_codec_set_hmic_bias(struct sun8i_codec *scodec, bool enable)
+{
+	struct snd_soc_dapm_context *dapm = &scodec->card->dapm;
+	int irq_mask = BIT(SUN8I_HMIC_CTRL1_HMIC_DATA_IRQ_EN);
+
+	if (enable)
+		snd_soc_dapm_force_enable_pin(dapm, "HBIAS");
+	else
+		snd_soc_dapm_disable_pin(dapm, "HBIAS");
+	snd_soc_dapm_sync(dapm);
+
+	dev_dbg(scodec->card->dev, "HMIC bias %s\n", enable ? "on" : "off");
+
+	regmap_update_bits(scodec->regmap, SUN8I_HMIC_CTRL1,
+			   irq_mask, enable ? irq_mask : 0);
+}
+
+static void sun8i_codec_jack_work(struct work_struct *work)
+{
+	struct sun8i_codec *scodec = container_of(work, struct sun8i_codec,
+						  jack_work.work);
+	int type;
+
+	/* Prevent a well-timed button press from affecting detection. */
+	synchronize_irq(scodec->jack_irq);
+	if (!scodec->jack_pending)
+		return;
+
+	if (sun8i_codec_read_hmic_button(scodec)) {
+		sun8i_codec_set_hmic_bias(scodec, false);
+		type = SND_JACK_HEADPHONE;
+	} else {
+		type = SND_JACK_HEADSET;
+	}
+
+	snd_soc_jack_report(&scodec->jack, type, scodec->jack_type);
+}
+
+static irqreturn_t sun8i_codec_jack_irq(int irq, void *dev_id)
+{
+	struct sun8i_codec *scodec = dev_id;
+	unsigned int status;
+
+	regmap_read(scodec->regmap, SUN8I_HMIC_STS, &status);
+
+	if (status & BIT(SUN8I_HMIC_STS_JACK_OUT_IRQ_ST)) {
+		if (scodec->jack_type & SND_JACK_MICROPHONE) {
+			sun8i_codec_set_hmic_bias(scodec, false);
+			scodec->jack_pending = false;
+		}
+
+		dev_dbg(scodec->card->dev, "jack out\n");
+		snd_soc_jack_report(&scodec->jack, 0, scodec->jack_type);
+	} else if (status & BIT(SUN8I_HMIC_STS_JACK_IN_IRQ_ST)) {
+		int type = SND_JACK_HEADPHONE;
+
+		if (scodec->jack_type & SND_JACK_MICROPHONE) {
+			sun8i_codec_set_hmic_bias(scodec, true);
+			scodec->jack_pending = true;
+			queue_delayed_work(system_power_efficient_wq,
+					   &scodec->jack_work,
+					   msecs_to_jiffies(600));
+		}
+
+		dev_dbg(scodec->card->dev, "jack in\n");
+		snd_soc_jack_report(&scodec->jack, type, type);
+	} else if (status & BIT(SUN8I_HMIC_STS_HMIC_DATA_IRQ_ST)) {
+		int type = SND_JACK_HEADSET | sun8i_codec_read_hmic_button(scodec);
+
+		scodec->jack_pending = false;
+		snd_soc_jack_report(&scodec->jack, type, scodec->jack_type);
+	} else {
+		return IRQ_NONE;
+	}
+
+	regmap_write(scodec->regmap, SUN8I_HMIC_STS, status);
+
+	return IRQ_HANDLED;
+}
 
 static int sun8i_codec_probe(struct platform_device *pdev)
 {
@@ -1243,6 +1565,18 @@ static int sun8i_codec_probe(struct platform_device *pdev)
 	scodec = devm_kzalloc(&pdev->dev, sizeof(*scodec), GFP_KERNEL);
 	if (!scodec)
 		return -ENOMEM;
+
+	scodec->quirks = of_device_get_match_data(&pdev->dev);
+
+	platform_set_drvdata(pdev, scodec);
+
+	if (scodec->quirks->bus_clock) {
+		scodec->clk_bus = devm_clk_get(&pdev->dev, "bus");
+		if (IS_ERR(scodec->clk_bus)) {
+			dev_err(&pdev->dev, "Failed to get the bus clock\n");
+			return PTR_ERR(scodec->clk_bus);
+		}
+	}
 
 	scodec->clk_module = devm_clk_get(&pdev->dev, "mod");
 	if (IS_ERR(scodec->clk_module)) {
@@ -1256,17 +1590,30 @@ static int sun8i_codec_probe(struct platform_device *pdev)
 		return PTR_ERR(base);
 	}
 
-	scodec->regmap = devm_regmap_init_mmio_clk(&pdev->dev, "bus", base,
-						   &sun8i_codec_regmap_config);
+	scodec->regmap = devm_regmap_init_mmio(&pdev->dev, base,
+					       &sun8i_codec_regmap_config);
 	if (IS_ERR(scodec->regmap)) {
 		dev_err(&pdev->dev, "Failed to create our regmap\n");
 		return PTR_ERR(scodec->regmap);
 	}
 
-	scodec->quirks = of_device_get_match_data(&pdev->dev);
+	if (scodec->quirks->jack_detection) {
+		scodec->jack_irq = platform_get_irq(pdev, 0);
+		if (scodec->jack_irq < 0)
+			return scodec->jack_irq;
 
-	platform_set_drvdata(pdev, scodec);
+		irq_set_status_flags(scodec->jack_irq, IRQ_NOAUTOEN);
+		ret = devm_request_threaded_irq(&pdev->dev, scodec->jack_irq,
+						NULL, sun8i_codec_jack_irq,
+						IRQF_ONESHOT,
+						dev_name(&pdev->dev), scodec);
+		if (ret)
+			return ret;
 
+		INIT_DELAYED_WORK(&scodec->jack_work, sun8i_codec_jack_work);
+	}
+
+	regcache_cache_only(scodec->regmap, true);
 	pm_runtime_enable(&pdev->dev);
 	if (!pm_runtime_enabled(&pdev->dev)) {
 		ret = sun8i_codec_runtime_resume(&pdev->dev);
@@ -1304,11 +1651,14 @@ static int sun8i_codec_remove(struct platform_device *pdev)
 }
 
 static const struct sun8i_codec_quirks sun8i_a33_quirks = {
+	.bus_clock	= true,
 	.legacy_widgets	= true,
 	.lrck_inversion	= true,
 };
 
 static const struct sun8i_codec_quirks sun50i_a64_quirks = {
+	.bus_clock	= true,
+	.jack_detection	= true,
 };
 
 static const struct of_device_id sun8i_codec_of_match[] = {
