@@ -365,9 +365,14 @@ unlock:
 	return ret;
 }
 
+static ktime_t avg_time;
+static u64 avg_count;
+static DEFINE_MUTEX(avg_lock);
+
 static int sunxi_rsb_write(struct sunxi_rsb *rsb, u8 rtaddr, u8 addr,
 			   const u32 *buf, size_t len)
 {
+	ktime_t start, delta;
 	u32 cmd;
 	int ret;
 
@@ -389,6 +394,7 @@ static int sunxi_rsb_write(struct sunxi_rsb *rsb, u8 rtaddr, u8 addr,
 		return -EINVAL;
 	}
 
+	start = ktime_get();
 	ret = pm_runtime_resume_and_get(rsb->dev);
 	if (ret)
 		return ret;
@@ -405,6 +411,18 @@ static int sunxi_rsb_write(struct sunxi_rsb *rsb, u8 rtaddr, u8 addr,
 
 	pm_runtime_mark_last_busy(rsb->dev);
 	pm_runtime_put_autosuspend(rsb->dev);
+	delta = ktime_get() - start;
+
+	mutex_lock(&avg_lock);
+	avg_count++;
+	avg_time += delta;
+	if (avg_count == 1024) {
+		avg_count = 1;
+		avg_time += 512;
+		avg_time >>= 10;
+		dev_info(rsb->dev, "Average write latency: %lld ns\n", avg_time);
+	}
+	mutex_unlock(&avg_lock);
 
 	return ret;
 }
