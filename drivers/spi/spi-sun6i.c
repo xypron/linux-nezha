@@ -15,6 +15,7 @@
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/pm_runtime.h>
 #include <linux/reset.h>
@@ -485,6 +486,8 @@ static int sun6i_spi_runtime_resume(struct device *dev)
 	struct sun6i_spi *sspi = spi_master_get_devdata(master);
 	int ret;
 
+	pinctrl_pm_select_default_state(dev);
+
 	ret = clk_prepare_enable(sspi->hclk);
 	if (ret) {
 		dev_err(dev, "Couldn't enable AHB clock\n");
@@ -524,6 +527,7 @@ static int sun6i_spi_runtime_suspend(struct device *dev)
 	reset_control_assert(sspi->rstc);
 	clk_disable_unprepare(sspi->mclk);
 	clk_disable_unprepare(sspi->hclk);
+	pinctrl_pm_select_idle_state(dev);
 
 	return 0;
 }

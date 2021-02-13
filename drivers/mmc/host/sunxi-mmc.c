@@ -29,6 +29,7 @@
 #include <linux/mod_devicetable.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
@@ -1217,6 +1218,8 @@ static int sunxi_mmc_enable(struct sunxi_mmc_host *host)
 {
 	int ret;
 
+	pinctrl_pm_select_default_state(host->dev);
+
 	if (!IS_ERR(host->reset)) {
 		ret = reset_control_reset(host->reset);
 		if (ret) {
@@ -1285,6 +1288,8 @@ static void sunxi_mmc_disable(struct sunxi_mmc_host *host)
 
 	if (!IS_ERR(host->reset))
 		reset_control_assert(host->reset);
+
+	pinctrl_pm_select_idle_state(host->dev);
 }
 
 static int sunxi_mmc_resource_request(struct sunxi_mmc_host *host,

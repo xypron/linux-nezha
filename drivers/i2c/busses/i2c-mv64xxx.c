@@ -908,6 +908,7 @@ mv64xxx_i2c_runtime_suspend(struct device *dev)
 	reset_control_assert(drv_data->rstc);
 	clk_disable_unprepare(drv_data->reg_clk);
 	clk_disable_unprepare(drv_data->clk);
+	pinctrl_pm_select_idle_state(dev);
 
 	return 0;
 }
@@ -917,6 +918,7 @@ mv64xxx_i2c_runtime_resume(struct device *dev)
 {
 	struct mv64xxx_i2c_data *drv_data = dev_get_drvdata(dev);
 
+	pinctrl_pm_select_default_state(dev);
 	clk_prepare_enable(drv_data->clk);
 	clk_prepare_enable(drv_data->reg_clk);
 	reset_control_reset(drv_data->rstc);

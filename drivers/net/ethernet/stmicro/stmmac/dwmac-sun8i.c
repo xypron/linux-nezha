@@ -15,6 +15,7 @@
 #include <linux/of_mdio.h>
 #include <linux/of_net.h>
 #include <linux/phy.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #include <linux/regmap.h>
@@ -566,6 +567,8 @@ static int sun8i_dwmac_init(struct platform_device *pdev, void *priv)
 		goto err_disable_regulator_phy_io;
 	}
 
+	pinctrl_pm_select_default_state(&pdev->dev);
+
 	ret = clk_prepare_enable(gmac->tx_clk);
 	if (ret) {
 		dev_err(&pdev->dev, "Could not enable AHB clock\n");
@@ -1032,6 +1035,8 @@ static void sun8i_dwmac_exit(struct platform_device *pdev, void *priv)
 		sun8i_dwmac_unpower_internal_phy(gmac);
 
 	clk_disable_unprepare(gmac->tx_clk);
+
+	pinctrl_pm_select_sleep_state(&pdev->dev);
 
 	regulator_disable(gmac->regulator_phy);
 	regulator_disable(gmac->regulator_phy_io);

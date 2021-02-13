@@ -36,6 +36,11 @@
 #include "../core.h"
 #include "pinctrl-sunxi.h"
 
+static struct sunxi_desc_function disable_function = {
+	.name	= "disable",
+	.muxval	= SUN4I_FUNC_DISABLE,
+};
+
 static struct irq_chip sunxi_pinctrl_edge_irq_chip;
 static struct irq_chip sunxi_pinctrl_level_irq_chip;
 
@@ -79,6 +84,9 @@ sunxi_pinctrl_desc_find_function_by_name(struct sunxi_pinctrl *pctl,
 {
 	int i;
 
+	if (!strcmp(func_name, disable_function.name))
+		return &disable_function;
+
 	for (i = 0; i < pctl->desc->npins; i++) {
 		const struct sunxi_desc_pin *pin = pctl->desc->pins + i;
 
@@ -105,6 +113,9 @@ sunxi_pinctrl_desc_find_function_by_pin(struct sunxi_pinctrl *pctl,
 					const char *func_name)
 {
 	int i;
+
+	if (!strcmp(func_name, disable_function.name))
+		return &disable_function;
 
 	for (i = 0; i < pctl->desc->npins; i++) {
 		const struct sunxi_desc_pin *pin = pctl->desc->pins + i;
@@ -1248,6 +1259,8 @@ static int sunxi_pinctrl_build_state(struct platform_device *pdev)
 
 			sunxi_pinctrl_add_function(pctl, func->name);
 		}
+
+		sunxi_pinctrl_add_function(pctl, disable_function.name);
 	}
 
 	/* And now allocated and fill the array for real */
@@ -1277,6 +1290,36 @@ static int sunxi_pinctrl_build_state(struct platform_device *pdev)
 
 			func_item = sunxi_pinctrl_find_function_by_name(pctl,
 									func->name);
+			if (!func_item) {
+				kfree(pctl->functions);
+				return -EINVAL;
+			}
+
+			if (!func_item->groups) {
+				func_item->groups =
+					devm_kcalloc(&pdev->dev,
+						     func_item->ngroups,
+						     sizeof(*func_item->groups),
+						     GFP_KERNEL);
+				if (!func_item->groups) {
+					kfree(pctl->functions);
+					return -ENOMEM;
+				}
+			}
+
+			func_grp = func_item->groups;
+			while (*func_grp)
+				func_grp++;
+
+			*func_grp = pin->pin.name;
+		}
+
+		{
+			struct sunxi_pinctrl_function *func_item;
+			const char *func_name = disable_function.name;
+			const char **func_grp;
+
+			func_item = sunxi_pinctrl_find_function_by_name(pctl, func_name);
 			if (!func_item) {
 				kfree(pctl->functions);
 				return -EINVAL;

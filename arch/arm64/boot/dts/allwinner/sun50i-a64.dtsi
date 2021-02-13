@@ -725,14 +725,29 @@
 				function = "i2c0";
 			};
 
+			i2c0_pins_idle: i2c0-pins-idle {
+				pins = "PH0", "PH1";
+				function = "disable";
+			};
+
 			i2c1_pins: i2c1-pins {
 				pins = "PH2", "PH3";
 				function = "i2c1";
 			};
 
+			i2c1_pins_idle: i2c1-pins-idle {
+				pins = "PH2", "PH3";
+				function = "disable";
+			};
+
 			i2c2_pins: i2c2-pins {
 				pins = "PE14", "PE15";
 				function = "i2c2";
+			};
+
+			i2c2_pins_idle: i2c2-pins-idle {
+				pins = "PE14", "PE15";
+				function = "disable";
 			};
 
 			/omit-if-no-ref/
@@ -753,12 +768,26 @@
 				bias-pull-up;
 			};
 
+			mmc0_pins_idle: mmc0-pins-idle {
+				pins = "PF0", "PF1", "PF2", "PF3",
+				       "PF4", "PF5";
+				function = "disable";
+				bias-disable;
+			};
+
 			mmc1_pins: mmc1-pins {
 				pins = "PG0", "PG1", "PG2", "PG3",
 				       "PG4", "PG5";
 				function = "mmc1";
 				drive-strength = <30>;
 				bias-pull-up;
+			};
+
+			mmc1_pins_idle: mmc1-pins-idle {
+				pins = "PG0", "PG1", "PG2", "PG3",
+				       "PG4", "PG5";
+				function = "disable";
+				bias-disable;
 			};
 
 			mmc2_pins: mmc2-pins {
@@ -797,6 +826,13 @@
 				drive-strength = <40>;
 			};
 
+			rgmii_pins_sleep: rgmii-pins-sleep {
+				pins = "PD8", "PD9", "PD10", "PD11", "PD12",
+				       "PD13", "PD15", "PD16", "PD17", "PD18",
+				       "PD19", "PD20", "PD21", "PD22", "PD23";
+				function = "disable";
+			};
+
 			spdif_tx_pin: spdif-tx-pin {
 				pins = "PH8";
 				function = "spdif";
@@ -807,9 +843,19 @@
 				function = "spi0";
 			};
 
+			spi0_pins_idle: spi0-pins-idle {
+				pins = "PC0", "PC1", "PC2", "PC3";
+				function = "disable";
+			};
+
 			spi1_pins: spi1-pins {
 				pins = "PD0", "PD1", "PD2", "PD3";
 				function = "spi1";
+			};
+
+			spi1_pins_idle: spi1-pins-idle {
+				pins = "PD0", "PD1", "PD2", "PD3";
+				function = "disable";
 			};
 
 			uart0_pb_pins: uart0-pb-pins {
@@ -1012,8 +1058,9 @@
 			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_BUS_I2C0>;
 			resets = <&ccu RST_BUS_I2C0>;
-			pinctrl-names = "default";
+			pinctrl-names = "default", "idle";
 			pinctrl-0 = <&i2c0_pins>;
+			pinctrl-1 = <&i2c0_pins_idle>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -1025,8 +1072,9 @@
 			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_BUS_I2C1>;
 			resets = <&ccu RST_BUS_I2C1>;
-			pinctrl-names = "default";
+			pinctrl-names = "default", "idle";
 			pinctrl-0 = <&i2c1_pins>;
+			pinctrl-1 = <&i2c1_pins_idle>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -1038,8 +1086,9 @@
 			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_BUS_I2C2>;
 			resets = <&ccu RST_BUS_I2C2>;
-			pinctrl-names = "default";
+			pinctrl-names = "default", "idle";
 			pinctrl-0 = <&i2c2_pins>;
+			pinctrl-1 = <&i2c2_pins_idle>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -1053,8 +1102,9 @@
 			clock-names = "ahb", "mod";
 			dmas = <&dma 23>, <&dma 23>;
 			dma-names = "rx", "tx";
-			pinctrl-names = "default";
+			pinctrl-names = "default", "idle";
 			pinctrl-0 = <&spi0_pins>;
+			pinctrl-1 = <&spi0_pins_idle>;
 			resets = <&ccu RST_BUS_SPI0>;
 			status = "disabled";
 			num-cs = <1>;
@@ -1070,8 +1120,9 @@
 			clock-names = "ahb", "mod";
 			dmas = <&dma 24>, <&dma 24>;
 			dma-names = "rx", "tx";
-			pinctrl-names = "default";
+			pinctrl-names = "default", "idle";
 			pinctrl-0 = <&spi1_pins>;
+			pinctrl-1 = <&spi1_pins_idle>;
 			resets = <&ccu RST_BUS_SPI1>;
 			status = "disabled";
 			num-cs = <1>;
