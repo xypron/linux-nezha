@@ -105,6 +105,13 @@
 		status = "disabled";
 	};
 
+	scpi_protocol: scpi {
+		compatible = "arm,scpi";
+		mboxes = <&msgbox 2>, <&msgbox 3>;
+		mbox-names = "tx", "rx";
+		shmem = <&scpi_sram>;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <1>;
@@ -388,6 +395,7 @@
 			reg = <0x01c20000 0x400>;
 			clocks = <&osc24M>, <&rtc 0>;
 			clock-names = "hosc", "losc";
+			protected-clocks = <CLK_BUS_MSGBOX>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 		};
@@ -568,9 +576,14 @@
 		};
 
 		mbus: dram-controller@1c62000 {
-			compatible = "allwinner,sun8i-h3-mbus";
-			reg = <0x01c62000 0x1000>;
-			clocks = <&ccu CLK_MBUS>;
+			/* compatible is in per SoC .dtsi file */
+			reg = <0x01c62000 0x1000>,
+			      <0x01c63000 0x1000>;
+			reg-names = "mbus", "dram";
+			clocks = <&ccu CLK_BUS_DRAM>,
+				 <&ccu CLK_DRAM>,
+				 <&ccu CLK_MBUS>;
+			clock-names = "apb", "dram", "mbus";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			dma-ranges = <0x00000000 0x40000000 0xc0000000>;
@@ -876,6 +889,7 @@
 			clocks = <&osc24M>, <&rtc 0>, <&rtc 2>,
 				 <&ccu CLK_PLL_PERIPH0>;
 			clock-names = "hosc", "losc", "iosc", "pll-periph";
+			protected-clocks = <CLK_APB0_TWD>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 		};

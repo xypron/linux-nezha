@@ -42,8 +42,6 @@
 
 /* module and usb clocks exported */
 
-#define CLK_DRAM		82
-
 /* dram gates and more module clocks exported */
 
 #define CLK_MBUS		95
