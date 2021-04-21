@@ -94,10 +94,6 @@
 	status = "okay";
 };
 
-&dwc3 {
-	status = "okay";
-};
-
 &ehci0 {
 	status = "okay";
 };
@@ -370,7 +366,10 @@
 	status = "okay";
 };
 
+&usb3 {
+	status = "okay";
+};
+
 &usb3phy {
 	phy-supply = <&reg_usb_vbus>;
-	status = "okay";
 };
