@@ -377,6 +377,33 @@ config FPU
 
 	  If you don't know what to do here, say Y.
 
+config RISCV_DMA_COHERENT
+	bool "Custom DMA coherent support"
+	depends on MMU
+	help
+	  Help SOC vendors to support their own custom interconnect coherent
+	  solution with PTE attributes.
+
+	  The RISC-V ISA doesn't yet specify how to query or modify PMAs, so let
+	  vendors define the custom properties of memory regions in PTE.
+
+	  If you don't know what to do here, say N.
+
+config RISCV_PAGE_DMA_MASK
+	hex "Custom DMA attributes' mask bits in pte"
+	depends on RISCV_DMA_COHERENT
+	default "0x0"
+
+config RISCV_PAGE_CACHE
+	hex "Custom CACHE attribute bits in pte"
+	depends on RISCV_DMA_COHERENT
+	default "0x0"
+
+config RISCV_PAGE_DMA_NONCACHE
+	hex "Custom NONCACHE attribute bits in pte"
+	depends on RISCV_DMA_COHERENT
+	default "0x0"
+
 endmenu
 
 menu "Kernel features"

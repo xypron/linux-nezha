@@ -24,6 +24,16 @@
 #define _PAGE_DIRTY     (1 << 7)    /* Set by hardware on any write */
 #define _PAGE_SOFT      (1 << 8)    /* Reserved for software */
 
+#ifdef CONFIG_RISCV_DMA_COHERENT
+#define _PAGE_DMA_MASK		CONFIG_RISCV_PAGE_DMA_MASK
+#define _PAGE_CACHE		CONFIG_RISCV_PAGE_CACHE
+#define _PAGE_DMA_NONCACHE	CONFIG_RISCV_PAGE_DMA_NONCACHE
+#else
+#define _PAGE_DMA_MASK		(0UL)
+#define _PAGE_CACHE		(0UL)
+#define _PAGE_DMA_NONCACHE	(0UL)
+#endif
+
 #define _PAGE_SPECIAL   _PAGE_SOFT
 #define _PAGE_TABLE     _PAGE_PRESENT
 
@@ -38,6 +48,7 @@
 /* Set of bits to preserve across pte_modify() */
 #define _PAGE_CHG_MASK  (~(unsigned long)(_PAGE_PRESENT | _PAGE_READ |	\
 					  _PAGE_WRITE | _PAGE_EXEC |	\
-					  _PAGE_USER | _PAGE_GLOBAL))
+					  _PAGE_USER | _PAGE_GLOBAL |	\
+					  _PAGE_DMA_MASK))
 
 #endif /* _ASM_RISCV_PGTABLE_BITS_H */
