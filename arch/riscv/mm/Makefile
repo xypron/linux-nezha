@@ -14,6 +14,10 @@ obj-$(CONFIG_MMU) += fault.o pageattr.o
 obj-y += cacheflush.o
 obj-y += context.o
 
+ifeq ($(CONFIG_RISCV_DMA_COHERENT), y)
+obj-y += dma-mapping.o
+endif
+
 ifeq ($(CONFIG_MMU),y)
 obj-$(CONFIG_SMP) += tlbflush.o
 endif

@@ -27,6 +27,7 @@ enum sbi_ext_id {
 	SBI_EXT_IPI = 0x735049,
 	SBI_EXT_RFENCE = 0x52464E43,
 	SBI_EXT_HSM = 0x48534D,
+	SBI_EXT_DMA = 0xAB150401,
 };
 
 enum sbi_ext_base_fid {
@@ -37,6 +38,7 @@ enum sbi_ext_base_fid {
 	SBI_EXT_BASE_GET_MVENDORID,
 	SBI_EXT_BASE_GET_MARCHID,
 	SBI_EXT_BASE_GET_MIMPID,
+	SBI_EXT_RFENCE_REMOTE_DMA_SYNC,
 };
 
 enum sbi_ext_time_fid {
@@ -61,6 +63,17 @@ enum sbi_ext_hsm_fid {
 	SBI_EXT_HSM_HART_START = 0,
 	SBI_EXT_HSM_HART_STOP,
 	SBI_EXT_HSM_HART_STATUS,
+};
+
+enum sbi_ext_dma_fid {
+	SBI_DMA_SYNC = 0,
+};
+
+enum sbi_dma_sync_data_direction {
+	SBI_DMA_BIDIRECTIONAL = 0,
+	SBI_DMA_TO_DEVICE = 1,
+	SBI_DMA_FROM_DEVICE = 2,
+	SBI_DMA_NONE = 3,
 };
 
 enum sbi_hsm_hart_status {
@@ -128,6 +141,9 @@ int sbi_remote_hfence_vvma_asid(const unsigned long *hart_mask,
 				unsigned long size,
 				unsigned long asid);
 int sbi_probe_extension(int ext);
+void sbi_dma_sync(unsigned long start,
+		  unsigned long size,
+		  enum sbi_dma_sync_data_direction dir);
 
 /* Check if current SBI specification version is 0.1 or not */
 static inline int sbi_spec_is_0_1(void)
