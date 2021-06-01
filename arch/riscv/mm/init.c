@@ -651,7 +651,7 @@ void protect_kernel_linear_mapping_text_rodata(void)
 	unsigned long data_start = (unsigned long)lm_alias(_data);
 
 	set_memory_ro(text_start, (init_text_start - text_start) >> PAGE_SHIFT);
-	set_memory_nx(text_start, (init_text_start - text_start) >> PAGE_SHIFT);
+	//set_memory_nx(text_start, (init_text_start - text_start) >> PAGE_SHIFT);
 
 	set_memory_ro(rodata_start, (data_start - rodata_start) >> PAGE_SHIFT);
 	set_memory_nx(rodata_start, (data_start - rodata_start) >> PAGE_SHIFT);
