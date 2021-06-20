@@ -17,9 +17,9 @@
 #define KB151_MAX_COLS			15
 
 #define KB151_DEVICE_ID_HI		0x00
-#define KB151_DEVICE_ID_HI_VALUE		0x4b
+#define KB151_DEVICE_ID_HI_VALUE		0xaa
 #define KB151_DEVICE_ID_LO		0x01
-#define KB151_DEVICE_ID_LO_VALUE		0x42
+#define KB151_DEVICE_ID_LO_VALUE		0x55
 #define KB151_FW_REVISION		0x02
 #define KB151_FW_FEATURES		0x03
 #define KB151_SYS_CONFIG		0x04
@@ -42,7 +42,7 @@ static void kb151_update(struct i2c_client *client)
 	struct kb151 *kb151 = i2c_get_clientdata(client);
 	unsigned short *keymap = kb151->input->keycode;
 	struct device *dev = &client->dev;
-	size_t buf_len = kb151->cols + 1;
+	size_t buf_len = kb151->cols + 4;
 	u8 *old_buf = kb151->buf;
 	u8 *new_buf = kb151->buf;
 	int col, crc, ret, row;
@@ -59,11 +59,16 @@ static void kb151_update(struct i2c_client *client)
 		return;
 	}
 
+#if 0
 	crc = crc8(kb151->crc_table, new_buf, buf_len, CRC8_INIT_VALUE);
 	if (crc != CRC8_GOOD_VALUE(kb151->crc_table)) {
 		dev_err(dev, "Bad scan data\n");
 		return;
 	}
+#else
+	old_buf += 4;
+	new_buf += 4;
+#endif
 
 	for (col = 0; col < kb151->cols; ++col) {
 		u8 old = *old_buf++;
@@ -163,7 +168,7 @@ static int kb151_probe(struct i2c_client *client)
 		return -EINVAL;
 	}
 
-	kb151 = devm_kzalloc(dev, struct_size(kb151, buf, 2 * (cols + 1)), GFP_KERNEL);
+	kb151 = devm_kzalloc(dev, struct_size(kb151, buf, 2 * (cols + 4)), GFP_KERNEL);
 	if (!kb151)
 		return -ENOMEM;
 
