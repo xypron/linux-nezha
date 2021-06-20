@@ -363,6 +363,10 @@
 	status = "okay";
 };
 
+&i2c2_pins {
+	bias-pull-up;
+};
+
 &i2c_csi {
 	gc2145: front-camera@3c {
 		compatible = "galaxycore,gc2145";
