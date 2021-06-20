@@ -453,6 +453,11 @@
 				MATRIX_KEY(4,  7, KEY_RIGHTBRACE)>;
 		wakeup-source;
 	};
+
+	pmic@75 {
+		compatible = "injoinic,ip5209";
+		reg = <0x75>;
+	};
 };
 
 &i2c2_pins {
