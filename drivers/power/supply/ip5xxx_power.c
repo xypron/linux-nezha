@@ -511,12 +511,14 @@ static int ip5xxx_power_probe(struct i2c_client *client)
 
 	/*
 	 * Enable the NTC.
-	 * Configure the button for long press => LED, two press => shutdown.
+	 * Configure the button for two press => LED, long press => shutdown.
 	 */
 	ret = regmap_update_bits(ip5xxx->regmap, IP5XXX_SYS_CTL5,
 				 IP5XXX_SYS_CTL5_NTC_EN |
 				 IP5XXX_SYS_CTL5_WLED_MODE_SEL |
-				 IP5XXX_SYS_CTL5_BTN_SHDN_SEL, 0);
+				 IP5XXX_SYS_CTL5_BTN_SHDN_SEL,
+				 IP5XXX_SYS_CTL5_WLED_MODE_SEL |
+				 IP5XXX_SYS_CTL5_BTN_SHDN_SEL);
 	if (ret)
 		return ret;
 
