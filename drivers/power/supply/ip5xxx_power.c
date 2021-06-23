@@ -500,10 +500,12 @@ static int ip5xxx_power_probe(struct i2c_client *client)
 		return ret;
 
 	/*
-	 * Disable power on when VIN is removed (wait until the phone is on).
+	 * Enable power on when VIN is removed, else I2C will disappear
+	 * when unplugging A/C.
 	 */
 	ret = regmap_update_bits(ip5xxx->regmap, IP5XXX_SYS_CTL4,
-				 IP5XXX_SYS_CTL4_VIN_PULLOUT_BOOST_EN, 0);
+				 IP5XXX_SYS_CTL4_VIN_PULLOUT_BOOST_EN,
+				 IP5XXX_SYS_CTL4_VIN_PULLOUT_BOOST_EN);
 	if (ret)
 		return ret;
 
