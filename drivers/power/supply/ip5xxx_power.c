@@ -79,7 +79,6 @@ struct ip5xxx {
 };
 
 static const enum power_supply_property ip5xxx_boost_properties[] = {
-	POWER_SUPPLY_PROP_ONLINE,
 	POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN,
 };
 
@@ -92,14 +91,6 @@ static int ip5xxx_boost_get_property(struct power_supply *psy,
 	int ret;
 
 	switch (psp) {
-	case POWER_SUPPLY_PROP_ONLINE:
-		ret = regmap_read(ip5xxx->regmap, IP5XXX_SYS_CTL0, &rval);
-		if (ret)
-			return ret;
-
-		val->intval = !!(rval & IP5XXX_SYS_CTL0_BOOST_EN);
-		return 0;
-
 	case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
 		ret = regmap_read(ip5xxx->regmap, IP5XXX_CHG_CTL1, &rval);
 		if (ret)
@@ -122,11 +113,6 @@ static int ip5xxx_boost_set_property(struct power_supply *psy,
 	unsigned int rval;
 
 	switch (psp) {
-	case POWER_SUPPLY_PROP_ONLINE:
-		rval = val->intval ? IP5XXX_SYS_CTL0_BOOST_EN : 0;
-		return regmap_update_bits(ip5xxx->regmap, IP5XXX_SYS_CTL0,
-					  IP5XXX_SYS_CTL0_BOOST_EN, rval);
-
 	case POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN:
 		rval = ((val->intval - 4530000) / 100000) << 2;
 		return regmap_update_bits(ip5xxx->regmap, IP5XXX_CHG_CTL1,
