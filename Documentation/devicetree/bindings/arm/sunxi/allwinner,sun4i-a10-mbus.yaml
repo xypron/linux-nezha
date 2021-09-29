@@ -31,6 +31,7 @@ properties:
       - allwinner,sun5i-a13-mbus
       - allwinner,sun8i-h3-mbus
       - allwinner,sun50i-a64-mbus
+      - allwinner,sun50i-h5-mbus
 
   reg:
     minItems: 1
@@ -83,6 +84,7 @@ if:
         enum:
           - allwinner,sun8i-h3-mbus
           - allwinner,sun50i-a64-mbus
+          - allwinner,sun50i-h5-mbus
 
 then:
   properties:
