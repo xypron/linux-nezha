@@ -6947,8 +6947,7 @@ CONFIG_AUTOFS_FS                                policy<{'riscv64': 'm'}>
 CONFIG_FUSE_FS                                  policy<{'riscv64': 'y'}>
 CONFIG_CUSE                                     policy<{'riscv64': 'm'}>
 CONFIG_VIRTIO_FS                                policy<{'riscv64': 'm'}>
-CONFIG_SHIFT_FS                                 policy<{'riscv64': 'm'}>
-CONFIG_SHIFT_FS_POSIX_ACL                       policy<{'riscv64': 'y'}>
+CONFIG_SHIFT_FS                                 policy<{'riscv64': 'n'}>
 CONFIG_UNICODE                                  policy<{'riscv64': 'y'}>
 CONFIG_UNICODE_NORMALIZATION_SELFTEST           policy<{'riscv64': 'n'}>
 #
