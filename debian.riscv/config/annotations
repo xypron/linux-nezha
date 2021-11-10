@@ -7353,6 +7353,7 @@ CONFIG_XFS_DEBUG                                policy<{'riscv64': 'n'}>
 # Menu: General architecture-dependent options >> Architecture: riscv
 CONFIG_ARCH_MMAP_RND_BITS                       policy<{'riscv64': '18'}>
 CONFIG_COMPAT_32BIT_TIME                        policy<{'riscv64': 'y'}>
+CONFIG_VMAP_STACK                               policy<{'riscv64': 'y'}>
 CONFIG_STRICT_KERNEL_RWX                        policy<{'riscv64': 'y'}>
 CONFIG_LOCK_EVENT_COUNTS                        policy<{'riscv64': 'n'}>
 #
