@@ -872,7 +872,7 @@ CONFIG_FRAMEBUFFER_CONSOLE_ROTATION             policy<{'riscv64': 'y'}>
 CONFIG_FRAMEBUFFER_CONSOLE_DEFERRED_TAKEOVER    policy<{'riscv64': 'y'}>
 
 # Menu: Device Drivers >> Graphics support >> Direct Rendering Manager (XFree86 4.1.0 and higher DRI support)
-CONFIG_DRM                                      policy<{'riscv64': 'm'}>
+CONFIG_DRM                                      policy<{'riscv64': 'y'}>
 CONFIG_DRM_DP_AUX_CHARDEV                       policy<{'riscv64': 'y'}>
 CONFIG_DRM_DEBUG_SELFTEST                       policy<{'riscv64': 'n'}>
 CONFIG_DRM_FBDEV_EMULATION                      policy<{'riscv64': 'y'}>
@@ -1025,7 +1025,7 @@ CONFIG_DRM_LEGACY                               flag<REVIEW> note<Consider re-en
 # Menu: Device Drivers >> Graphics support >> Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) >> I2C encoder or helper chips
 CONFIG_DRM_I2C_CH7006                           policy<{'riscv64': 'm'}>
 CONFIG_DRM_I2C_SIL164                           policy<{'riscv64': 'm'}>
-CONFIG_DRM_I2C_NXP_TDA998X                      policy<{'riscv64': 'm'}>
+CONFIG_DRM_I2C_NXP_TDA998X                      policy<{'riscv64': 'y'}>
 CONFIG_DRM_I2C_NXP_TDA9950                      policy<{'riscv64': 'm'}>
 
 # Menu: Device Drivers >> Graphics support >> Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) >> Intel 8xx/9xx/G3x/G4x/HD Graphics
