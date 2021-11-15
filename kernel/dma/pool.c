@@ -100,15 +100,16 @@ static int atomic_pool_expand(struct gen_pool *pool, size_t pool_size,
 
 	arch_dma_prep_coherent(page, pool_size);
 
-#ifdef CONFIG_DMA_DIRECT_REMAP
-	addr = dma_common_contiguous_remap(page, pool_size,
-					   pgprot_dmacoherent(PAGE_KERNEL),
-					   __builtin_return_address(0));
-	if (!addr)
-		goto free_page;
-#else
-	addr = page_to_virt(page);
-#endif
+	if (arch_dma_soc_supports_direct_remap()) {
+		addr = dma_common_contiguous_remap(page, pool_size,
+				pgprot_dmacoherent(PAGE_KERNEL),
+				__builtin_return_address(0));
+		if (!addr)
+			goto free_page;
+	} else {
+		addr = page_to_virt(page);
+	}
+
 	/*
 	 * Memory in the atomic DMA pools must be unencrypted, the pools do not
 	 * shrink so no re-encryption occurs in dma_direct_free().
@@ -133,9 +134,8 @@ encrypt_mapping:
 		goto out;
 	}
 remove_mapping:
-#ifdef CONFIG_DMA_DIRECT_REMAP
-	dma_common_free_remap(addr, pool_size);
-#endif
+	if (arch_dma_soc_supports_direct_remap())
+		dma_common_free_remap(addr, pool_size);
 free_page: __maybe_unused
 	__free_pages(page, order);
 out:

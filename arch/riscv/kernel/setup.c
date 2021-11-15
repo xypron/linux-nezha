@@ -32,8 +32,11 @@
 #include <asm/thread_info.h>
 #include <asm/kasan.h>
 #include <asm/efi.h>
+#include <asm/soc.h>
 
 #include "head.h"
+
+void dma_non_coherent_setup(void);
 
 #if defined(CONFIG_DUMMY_CONSOLE) || defined(CONFIG_EFI)
 struct screen_info screen_info __section(".data") = {
@@ -260,6 +263,8 @@ static void __init parse_dtb(void)
 #endif
 }
 
+extern struct soc_cache riscv_soc_cache;
+
 void __init setup_arch(char **cmdline_p)
 {
 	parse_dtb();
@@ -293,6 +298,12 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_SMP
 	setup_smp();
 #endif
+
+	pr_info("Cache: uncached_offset = %llx, is_dma_coherent = %u, has_custom_cmo = %u, has_pbmt = %u\n",
+			riscv_soc_cache.uncached_offset,
+			riscv_soc_cache.is_dma_coherent,
+			riscv_soc_cache.has_custom_cmo,
+			riscv_soc_cache.has_pbmt);
 
 	riscv_fill_hwcap();
 }

@@ -379,4 +379,22 @@ static inline void debug_dma_dump_mappings(struct device *dev)
 
 extern const struct dma_map_ops dma_dummy_ops;
 
+#ifdef CONFIG_ARCH_HAS_DMA_SOC_SUPPORTS_DIRECT_REMAP
+bool arch_dma_soc_supports_direct_remap(void);
+#else
+bool arch_dma_soc_supports_direct_remap(void)
+{
+	return IS_ENABLED(CONFIG_DMA_DIRECT_REMAP);
+}
+#endif
+
+#ifdef CONFIG_ARCH_HAS_DMA_SOC_SUPPORTS_NONCOHERENT_MMAP
+bool arch_dma_soc_supports_noncoherent_mmap(void);
+#else
+bool arch_dma_soc_supports_noncoherent_mmap(void)
+{
+	return IS_ENABLED(CONFIG_DMA_NONCOHERENT_MMAP);
+}
+#endif
+
 #endif /* _LINUX_DMA_MAP_OPS_H */

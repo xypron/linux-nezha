@@ -11,7 +11,6 @@ CONFIG_DEBUG_KERNEL                             note<required debug option>
 
 # Menu: Architecture: riscv
 CONFIG_MMU                                      policy<{'riscv64': 'y'}>
-CONFIG_RISCV_UNCACHED_OFFSET                    policy<{'riscv64': '0xF80000000'}>
 
 # Menu: Boot options >> Architecture: riscv
 CONFIG_CMDLINE                                  policy<{'riscv64': '""'}>

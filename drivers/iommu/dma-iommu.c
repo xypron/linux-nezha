@@ -1112,7 +1112,7 @@ static void __iommu_dma_free(struct device *dev, size_t size, void *cpu_addr)
 	struct page *page = NULL, **pages = NULL;
 
 	/* Non-coherent atomic allocation? Easy */
-	if (IS_ENABLED(CONFIG_DMA_DIRECT_REMAP) &&
+	if (arch_dma_soc_supports_direct_remap() &&
 	    dma_free_from_pool(dev, cpu_addr, alloc_size))
 		return;
 
@@ -1196,7 +1196,7 @@ static void *iommu_dma_alloc(struct device *dev, size_t size,
 				dma_pgprot(dev, PAGE_KERNEL, attrs), attrs);
 	}
 
-	if (IS_ENABLED(CONFIG_DMA_DIRECT_REMAP) &&
+	if (arch_dma_soc_supports_direct_remap() &&
 	    !gfpflags_allow_blocking(gfp) && !coherent)
 		page = dma_alloc_from_pool(dev, PAGE_ALIGN(size), &cpu_addr,
 					       gfp, NULL);

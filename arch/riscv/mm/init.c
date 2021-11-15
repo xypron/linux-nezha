@@ -612,7 +612,7 @@ asmlinkage void __init setup_vm(uintptr_t dtb_pa)
 {
 	pmd_t __maybe_unused fix_bmap_spmd, fix_bmap_epmd;
 
-	soc_setup_vm();
+	soc_setup_vm(dtb_pa);
 	setup_protection_map();
 
 	kernel_map.virt_addr = KERNEL_LINK_ADDR;

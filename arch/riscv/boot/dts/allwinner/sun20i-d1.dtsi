@@ -37,6 +37,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		timebase-frequency = <24000000>;
+		mmu {
+			pbmt = "custom";
+		};
 
 		cpu0: cpu@0 {
 			// FIXME: is this the right compatible?
@@ -117,6 +120,7 @@
 		#size-cells = <1>;
 		ranges;
 		interrupt-parent = <&intc>;
+		cache-dma = "custom-cmo";
 
 		// TODO: write a binding and driver.
 		dsp: dsp@1700000 {

@@ -174,7 +174,7 @@ void *dma_direct_alloc(struct device *dev, size_t size,
 	}
 
 	if (!IS_ENABLED(CONFIG_ARCH_HAS_DMA_SET_UNCACHED) &&
-	    !IS_ENABLED(CONFIG_DMA_DIRECT_REMAP) &&
+	    !arch_dma_soc_supports_direct_remap() &&
 	    !IS_ENABLED(CONFIG_DMA_GLOBAL_POOL) &&
 	    !dev_is_dma_coherent(dev) &&
 	    !is_swiotlb_for_alloc(dev))
@@ -194,7 +194,7 @@ void *dma_direct_alloc(struct device *dev, size_t size,
 	if (IS_ENABLED(CONFIG_DMA_COHERENT_POOL) &&
 	    !gfpflags_allow_blocking(gfp) &&
 	    (force_dma_unencrypted(dev) ||
-	     (IS_ENABLED(CONFIG_DMA_DIRECT_REMAP) &&
+	     (arch_dma_soc_supports_direct_remap() &&
 	      !dev_is_dma_coherent(dev))) &&
 	    !is_swiotlb_for_alloc(dev))
 		return dma_direct_alloc_from_pool(dev, size, dma_handle, gfp);
@@ -204,7 +204,7 @@ void *dma_direct_alloc(struct device *dev, size_t size,
 	if (!page)
 		return NULL;
 
-	if ((IS_ENABLED(CONFIG_DMA_DIRECT_REMAP) &&
+	if ((arch_dma_soc_supports_direct_remap() &&
 	     !dev_is_dma_coherent(dev)) ||
 	    (IS_ENABLED(CONFIG_DMA_REMAP) && PageHighMem(page))) {
 		/* remove any dirty cache lines on the kernel alias */
@@ -284,7 +284,7 @@ void dma_direct_free(struct device *dev, size_t size,
 	}
 
 	if (!IS_ENABLED(CONFIG_ARCH_HAS_DMA_SET_UNCACHED) &&
-	    !IS_ENABLED(CONFIG_DMA_DIRECT_REMAP) &&
+	    !arch_dma_soc_supports_direct_remap() &&
 	    !IS_ENABLED(CONFIG_DMA_GLOBAL_POOL) &&
 	    !dev_is_dma_coherent(dev) &&
 	    !is_swiotlb_for_alloc(dev)) {
@@ -486,7 +486,7 @@ int dma_direct_get_sgtable(struct device *dev, struct sg_table *sgt,
 bool dma_direct_can_mmap(struct device *dev)
 {
 	return dev_is_dma_coherent(dev) ||
-		IS_ENABLED(CONFIG_DMA_NONCOHERENT_MMAP);
+		arch_dma_soc_supports_noncoherent_mmap();
 }
 
 int dma_direct_mmap(struct device *dev, struct vm_area_struct *vma,

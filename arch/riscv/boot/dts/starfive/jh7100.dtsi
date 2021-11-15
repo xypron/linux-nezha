@@ -108,6 +108,8 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+		cache-dma = "uncached-offset";
+		cache-dma-uncached-offset = <0xF 0x80000000>;
 
 		dtim: dtim@1000000 {
 			compatible = "starfive,dtim0";

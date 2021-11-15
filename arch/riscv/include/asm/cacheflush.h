@@ -7,6 +7,19 @@
 #define _ASM_RISCV_CACHEFLUSH_H
 
 #include <linux/mm.h>
+#include <asm/soc.h>
+
+#ifndef CONFIG_SMP
+
+#define flush_icache_all() local_flush_icache_all()
+#define flush_icache_mm(mm, local) flush_icache_all()
+
+#else /* CONFIG_SMP */
+
+void flush_icache_all(void);
+void flush_icache_mm(struct mm_struct *mm, bool local);
+
+#endif /* CONFIG_SMP */
 
 static inline void local_flush_icache_all(void)
 {
@@ -26,38 +39,44 @@ static inline void flush_dcache_page(struct page *page)
 #define ICACHE_IVA_X5   ".long 0x0302800b"
 #define SYNC_IS         ".long 0x01b0000b"
 
+extern struct soc_cache riscv_soc_cache;
+
 static inline void flush_icache_range(unsigned long start, unsigned long end)
 {
-	register unsigned long tmp asm("x5") = start & (~(L1_CACHE_BYTES-1));
+	if (!riscv_soc_cache.has_custom_cmo) {
+		flush_icache_all();
+	} else {
+		register unsigned long tmp asm("x5") = start & (~(L1_CACHE_BYTES-1));
 
-	for (; tmp < ALIGN(end, L1_CACHE_BYTES); tmp += L1_CACHE_BYTES) {
-		__asm__ __volatile__ (
-				ICACHE_IVA_X5
-				:
-				: "r" (tmp)
-				: "memory");
+		for (; tmp < ALIGN(end, L1_CACHE_BYTES); tmp += L1_CACHE_BYTES) {
+			__asm__ __volatile__ (
+					ICACHE_IVA_X5
+					:
+					: "r" (tmp)
+					: "memory");
+		}
+
+		__asm__ __volatile__(SYNC_IS);
 	}
-
-	__asm__ __volatile__(SYNC_IS);
-
-	return;
 }
 
 static inline void flush_icache_range_phy(unsigned long start, unsigned long end)
 {
-	register unsigned long tmp asm("x5") = start & (~(L1_CACHE_BYTES-1));
+	if (!riscv_soc_cache.has_custom_cmo) {
+		flush_icache_all();
+	} else {
+		register unsigned long tmp asm("x5") = start & (~(L1_CACHE_BYTES-1));
 
-	for (; tmp < ALIGN(end, L1_CACHE_BYTES); tmp += L1_CACHE_BYTES) {
-		__asm__ __volatile__ (
-				ICACHE_IPA_X5
-				:
-				: "r" (tmp)
-				: "memory");
+		for (; tmp < ALIGN(end, L1_CACHE_BYTES); tmp += L1_CACHE_BYTES) {
+			__asm__ __volatile__ (
+					ICACHE_IPA_X5
+					:
+					: "r" (tmp)
+					: "memory");
+		}
+
+		__asm__ __volatile__(SYNC_IS);
 	}
-
-	__asm__ __volatile__(SYNC_IS);
-
-	return;
 }
 
 static inline void __flush_icache_page(struct page *page) {
@@ -75,18 +94,6 @@ static inline void __flush_icache_page(struct page *page) {
 #define flush_icache_range(start, end) flush_icache_range(start, end)
 #define flush_icache_user_page(vma, pg, addr, len) \
 	flush_icache_mm(vma->vm_mm, 0)
-
-#ifndef CONFIG_SMP
-
-#define flush_icache_all() local_flush_icache_all()
-#define flush_icache_mm(mm, local) flush_icache_all()
-
-#else /* CONFIG_SMP */
-
-void flush_icache_all(void);
-void flush_icache_mm(struct mm_struct *mm, bool local);
-
-#endif /* CONFIG_SMP */
 
 /*
  * Bits in sys_riscv_flush_icache()'s flags argument.
