@@ -175,14 +175,16 @@ endif
 		$(pkgdir)/boot/config-$(abi_release)-$*
 	install -m600 $(builddir)/build-$*/System.map \
 		$(pkgdir)/boot/System.map-$(abi_release)-$*
+#ifneq ($(disable_d_i),true)
 	if [ "$(filter true,$(do_dtbs))" ]; then \
 		$(build_cd) $(kmake) $(build_O) $(conc_level) dtbs_install \
 			INSTALL_DTBS_PATH=$(pkgdir)/lib/firmware/$(abi_release)-$*/device-tree; \
 		( cd $(pkgdir)/lib/firmware/$(abi_release)-$*/ && find device-tree -print ) | \
 		while read dtb_file; do \
-			echo "$$dtb_file ?" >> $(DEBIAN)/d-i/firmware/$(arch)/kernel-image; \
+			echo "$$dtb_file ?"; \
 		done; \
 	fi
+#endif
 ifeq ($(no_dumpfile),)
 	makedumpfile -g $(pkgdir)/boot/vmcoreinfo-$(abi_release)-$* \
 		-x $(builddir)/build-$*/vmlinux

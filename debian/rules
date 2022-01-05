@@ -39,14 +39,23 @@ do_tools_common?=true
 do_tools_host?=false
 do_tools_perf_jvmti?=false
 do_enforce_all?=false
+ifneq ($(filter noudeb,$(DEB_BUILD_PROFILES)),)
+disable_d_i=true
+endif
+
+# Don't build udebs if $(DEBIAN)/d-i/ doesn't exist
+ifeq ($(wildcard $(DEBIAN)/d-i/.),)
+	disable_d_i=true
+endif
+
+# Force disable_d_i
+disable_d_i=true
 
 # Don't build tools or udebs in a cross compile environment.
 ifneq ($(DEB_HOST_ARCH),$(DEB_BUILD_ARCH))
 	do_tools=false
 	disable_d_i=true
 	do_zfs=false
-	do_dkms_nvidia=false
-	do_dkms_nvidia_server=false
 endif
 
 # Are any of the kernel signing options enabled.
@@ -79,8 +88,6 @@ ifneq ($(filter autopkgtest,$(DEB_BUILD_PROFILES)),)
 	flavours := $(firstword $(flavours))
 	disable_d_i=true
 	do_zfs=false
-	do_dkms_nvidia=false
-	do_dkms_nvidia_server=false
 endif
 
 # Being used to build a mainline build -- turn off things which do not work.
@@ -89,8 +96,6 @@ ifeq ($(do_mainline_build),true)
 	do_tools=false
 	no_dumpfile=1
 	do_zfs=false
-	do_dkms_nvidia=false
-	do_dkms_nvidia_server=false
 	skipabi=true
 	skipmodule=true
 	skipretpoline=true
@@ -127,15 +132,17 @@ binary: binary-indep binary-arch
 
 build: build-arch build-indep
 
-clean: debian/control debian/canonical-certs.pem
+clean: debian/control debian/canonical-certs.pem debian/canonical-revoked-certs.pem
 	dh_testdir
 	dh_testroot
 	dh_clean
 
+ifeq ($(disable_d_i),)
 	# d-i stuff
 	rm -rf $(DEBIAN)/d-i-$(arch)
 	# Generated on the fly.
 	rm -f $(DEBIAN)/d-i/firmware/$(arch)/kernel-image
+endif
 
 	# normal build junk
 	rm -rf $(DEBIAN)/abi/$(release)-$(revision)
@@ -220,11 +227,16 @@ $(DEBIAN)/control.stub: 				\
 debian/control: $(DEBIAN)/control.stub
 	echo "# placebo control.stub for kernel-wedge flow change" >debian/control.stub
 	cp $(DEBIAN)/control.stub debian/control
+ifeq ($(disable_d_i),)
+	# start new paragraph in debian/control
+	echo >> debian/control
+	# append udeb packages
 	export KW_DEFCONFIG_DIR=$(DEBIAN)/d-i && \
 	export KW_CONFIG_DIR=$(DEBIAN)/d-i && \
 	LANG=C kernel-wedge gen-control $(release)-$(abinum) | \
-		perl -f $(DROOT)/scripts/misc/kernel-wedge-arch.pl $(arch) \
+		grep-dctrl -FArchitecture $(arch) \
 		>>$(CURDIR)/debian/control
+endif
 
 debian/canonical-certs.pem: $(wildcard $(DROOT)/certs/*-all.pem) $(wildcard $(DROOT)/certs/*-$(arch).pem) $(wildcard $(DEBIAN)/certs/*-all.pem) $(wildcard $(DEBIAN)/certs/*-$(arch).pem)
 	for cert in $(sort $(notdir $^));					\
@@ -233,6 +245,18 @@ debian/canonical-certs.pem: $(wildcard $(DROOT)/certs/*-all.pem) $(wildcard $(DR
 		do								\
 			if [ -f "$$dir/certs/$$cert" ]; then			\
 				cat "$$dir/certs/$$cert";			\
+				break;						\
+			fi;							\
+		done;								\
+	done >"$@"
+
+debian/canonical-revoked-certs.pem: $(wildcard $(DROOT)/revoked-certs/*-all.pem) $(wildcard $(DROOT)/revoked-certs/*-$(arch).pem) $(wildcard $(DEBIAN)/revoked-certs/*-all.pem) $(wildcard $(DEBIAN)/revoked-certs/*-$(arch).pem)
+	for cert in $(sort $(notdir $^));					\
+	do									\
+		for dir in $(DEBIAN) $(DROOT);					\
+		do								\
+			if [ -f "$$dir/revoked-certs/$$cert" ]; then		\
+				cat "$$dir/revoked-certs/$$cert";		\
 				break;						\
 			fi;							\
 		done;								\
