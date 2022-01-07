@@ -8977,7 +8977,7 @@ CONFIG_MAXPHYSMEM_128GB                         policy<{'riscv64': 'y'}>
 CONFIG_RISCV_BASE_PMU                           policy<{'riscv64': 'y'}>
 
 # Menu: Power management options
-CONFIG_PM                                       policy<{'riscv64': 'n'}>
+CONFIG_PM                                       policy<{'riscv64': 'y'}>
 #
 CONFIG_PM                                       mark<ENFORCED> note<LP:1867753>
 
