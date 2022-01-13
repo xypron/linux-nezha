@@ -285,4 +285,4 @@ static int __init sifive_l2_init(void)
 #endif
 	return 0;
 }
-device_initcall(sifive_l2_init);
+core_initcall(sifive_l2_init);
