@@ -1,11 +1,6 @@
-linux-riscv-unstable (5.16.0-1001.1) jammy; urgency=medium
+linux-riscv-unstable (5.16.0-1001.1~ppa0) jammy; urgency=medium
 
   * Initial support for the Allwinner Nezha board
-  * TODO
-    - "sun6i-rtc 7090000.rtc: rtc is still busy."
-    - "sun8i-ce 3040000.crypto: DMA timeout for TRNG (tm=96) on flow 3"
-    - VDSO icache which breaks other boards
-    - SiFive Unmatched DMA warning
 
  -- Alexandre Ghiti <alexandre.ghiti@canonical.com>  Wed, 12 Jan 2022 05:59:31 +0100
 
