@@ -1,3 +1,21 @@
+linux-riscv-unstable (5.16.0-1001.1~ppa3) jammy; urgency=medium
+
+  * Fix build failure again caused by misplaced ignore.modules
+
+ -- Alexandre Ghiti <alexandre.ghiti@canonical.com>  Fri, 21 Jan 2022 14:47:27 +0100
+
+linux-riscv-unstable (5.16.0-1001.1~ppa2) jammy; urgency=medium
+
+  * Fix build failure again caused by misplaced ignore.modules
+
+ -- Alexandre Ghiti <alexandre.ghiti@canonical.com>  Thu, 20 Jan 2022 08:37:04 +0100
+
+linux-riscv-unstable (5.16.0-1001.1~ppa1) jammy; urgency=medium
+
+  * Fix build failure caused by misplaced ignore.modules
+
+ -- Alexandre Ghiti <alexandre.ghiti@canonical.com>  Wed, 19 Jan 2022 10:22:30 +0100
+
 linux-riscv-unstable (5.16.0-1001.1~ppa0) jammy; urgency=medium
 
   * Initial support for the Allwinner Nezha board
