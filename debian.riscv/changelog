@@ -1,3 +1,9 @@
+linux-riscv-unstable (5.16.0-1001.1~ppa4) jammy; urgency=medium
+
+  * Fix build failure caused by checks.
+
+ -- Alexandre Ghiti <alexandre.ghiti@canonical.com>  Thu, 27 Jan 2022 11:03:40 +0100
+
 linux-riscv-unstable (5.16.0-1001.1~ppa3) jammy; urgency=medium
 
   * Fix build failure again caused by misplaced ignore.modules
