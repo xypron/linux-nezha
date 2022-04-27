@@ -262,6 +262,15 @@
 			compatible = "starfive,jh7110-clk-isp";
 			reg = <0x0 0x19810000 0x0 0x10000>;
 			reg-names = "isp";
+			clocks = <&clkgen JH7110_ISP_TOP_CLK_DVP>,
+				 <&clkgen JH7110_ISP_TOP_CLK_ISPCORE_2X>,
+				 <&clkgen JH7110_ISP_TOP_CLK_ISP_AXI>;
+			clock-names = "u0_dom_isp_top_clk_dom_isp_top_clk_dvp",
+				      "u0_dom_isp_top_clk_dom_isp_top_clk_ispcore_2x",
+				      "u0_dom_isp_top_clk_dom_isp_top_clk_isp_axi";
+			resets = <&rstgen RSTN_U0_DOM_ISP_TOP_N>,
+				 <&rstgen RSTN_U0_DOM_ISP_TOP_AXI>;
+			reset-names = "rst_isp_top_n", "rst_isp_top_axi";
 			#clock-cells = <1>;
 			status = "disabled";
 		};
