@@ -1,0 +1,6 @@
+config XRP
+        tristate  "XRP support"
+        #select SET_FS	
+	default m
+	help
+          This module provides the function of vp6 device.
