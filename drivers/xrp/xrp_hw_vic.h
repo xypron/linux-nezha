@@ -2,22 +2,9 @@
 #ifndef _XRP_HW_VIC_H
 #define _XRP_HW_VIC_H
 
-
-
-#define CLK_U0_HIFI4_CLK_CORE_CTRL_REG_ADDR(addr)                          ((void *)addr + 0x0U) //0x10230000 U0_STG_CRG__SAIF_BD_APBS__BASE_ADDR
-#define STG_CRG_RSTGEN_SOFTWARE_RESET_ASSERT0_REG_ADDR(addr)               ((void *)addr + 0x74U)
-#define STG_CRG_RSTGEN_SOFTWARE_RESET_STATUS0_REG_ADDR(addr)               ((void *)addr + 0x78U)
-
-#define CLK_U0_HIFI4_CLK_CORE_ENABLE_DATA                   1
-#define CLK_U0_HIFI4_CLK_CORE_DISABLE_DATA                  0
-#define CLK_U0_HIFI4_CLK_CORE_EN_SHIFT                      31
-#define CLK_U0_HIFI4_CLK_CORE_EN_MASK                       0x80000000U
-#define RST_U0_HIFI4_RST_AXI_MASK                           (0x1 << 2)
-#define RST_U0_HIFI4_RST_CORE_MASK                          (0x1 << 1)
-
-#define STG_SYSCONSAIF__SYSCFG_44_ADDR(addr)                ((void *)addr + 0x2cU) //0x10240000 U0_STG_SYSCON__SAIF_BD_APBS__BASE_ADDR
-#define STG_SYSCONSAIF__SYSCFG_56_ADDR(addr)                ((void *)addr + 0x38U)
-#define STG_SYSCONSAIF__SYSCFG_68_ADDR(addr)                ((void *)addr + 0x44U)
+#define STG_RUNSTALLADDR_OFFSET				    0x38U
+#define STG_STATVECTORSELADDR_OFFSET			    0x44U
+#define STG_ALTRESETVECADDR_OFFSET			    0x2CU
 
 #define U0_HIFI4_STATVECTORSEL_SHIFT                        0xCU
 #define U0_HIFI4_ALTRESETVEC_SHIFT                          0x0U
@@ -26,16 +13,6 @@
 #define U0_HIFI4_STATVECTORSEL_MASK                         0x1000U
 #define U0_HIFI4_ALTRESETVEC_MASK                           0xFFFFFFFFU
 #define U0_HIFI4_RUNSTALL_MASK                              0x40000U
-
-#define _ENABLE_CLOCK_CLK_U0_HIFI4_CLK_CORE_(addr)          saif_set_reg(CLK_U0_HIFI4_CLK_CORE_CTRL_REG_ADDR(addr), CLK_U0_HIFI4_CLK_CORE_ENABLE_DATA, CLK_U0_HIFI4_CLK_CORE_EN_SHIFT, CLK_U0_HIFI4_CLK_CORE_EN_MASK)
-#define _DISABLE_CLOCK_CLK_U0_HIFI4_CLK_CORE_(addr) 	    saif_set_reg(CLK_U0_HIFI4_CLK_CORE_CTRL_REG_ADDR(addr), CLK_U0_HIFI4_CLK_CORE_DISABLE_DATA, CLK_U0_HIFI4_CLK_CORE_EN_SHIFT, CLK_U0_HIFI4_CLK_CORE_EN_MASK)
-#define _ASSERT_RESET_RSTGEN_RST_U0_HIFI4_RST_AXI_(addr) 	saif_assert_rst(STG_CRG_RSTGEN_SOFTWARE_RESET_ASSERT0_REG_ADDR(addr), STG_CRG_RSTGEN_SOFTWARE_RESET_STATUS0_REG_ADDR(addr), RST_U0_HIFI4_RST_AXI_MASK)
-#define _ASSERT_RESET_RSTGEN_RST_U0_HIFI4_RST_CORE_(addr)   saif_assert_rst(STG_CRG_RSTGEN_SOFTWARE_RESET_ASSERT0_REG_ADDR(addr), STG_CRG_RSTGEN_SOFTWARE_RESET_STATUS0_REG_ADDR(addr), RST_U0_HIFI4_RST_CORE_MASK)
-#define _CLEAR_RESET_RSTGEN_RST_U0_HIFI4_RST_AXI_(addr) 	saif_clear_rst(STG_CRG_RSTGEN_SOFTWARE_RESET_ASSERT0_REG_ADDR(addr), STG_CRG_RSTGEN_SOFTWARE_RESET_STATUS0_REG_ADDR(addr), RST_U0_HIFI4_RST_AXI_MASK)
-#define _CLEAR_RESET_RSTGEN_RST_U0_HIFI4_RST_CORE_(addr) 	saif_clear_rst(STG_CRG_RSTGEN_SOFTWARE_RESET_ASSERT0_REG_ADDR(addr), STG_CRG_RSTGEN_SOFTWARE_RESET_STATUS0_REG_ADDR(addr), RST_U0_HIFI4_RST_CORE_MASK)
-#define SET_U0_HIFI4_RUNSTALL(addr,data)                    saif_set_reg(STG_SYSCONSAIF__SYSCFG_56_ADDR(addr),data,U0_HIFI4_RUNSTALL_SHIFT,U0_HIFI4_RUNSTALL_MASK)
-#define SET_U0_HIFI4_STATVECTORSEL(addr,data)               saif_set_reg(STG_SYSCONSAIF__SYSCFG_68_ADDR(addr),data,U0_HIFI4_STATVECTORSEL_SHIFT,U0_HIFI4_STATVECTORSEL_MASK)
-#define SET_U0_HIFI4_ALTRESETVEC(addr,data)                 saif_set_reg(STG_SYSCONSAIF__SYSCFG_44_ADDR(addr),data,U0_HIFI4_ALTRESETVEC_SHIFT,U0_HIFI4_ALTRESETVEC_MASK)
 
 struct hw_vic_vaddress
 {
@@ -72,6 +49,7 @@ struct xrp_hw_vic
 	struct clk *core_clk;
 	struct reset_control *core_rst;
 	struct reset_control *axi_rst;
+	struct regmap *syscon_regmap;
 	enum xrp_irq_mode intc_irq_mode;
 	u32 dsp_irq[2];
 	u32 intc_irq_src[2];

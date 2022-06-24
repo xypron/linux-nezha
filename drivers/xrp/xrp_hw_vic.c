@@ -7,6 +7,8 @@
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/reset.h>
+#include <linux/regmap.h>
+#include <linux/mfd/syscon.h>
 #include "xrp_internal.h"
 #include "xrp_address_map.h"
 #include "xrp_hw.h"
@@ -156,6 +158,12 @@ long init_hw(struct platform_device *pdev, void *hw_arg, int mem_idx, enum xrp_i
 		hw->syscon_regs = devm_ioremap(&pdev->dev, mem->start, resource_size(mem));
 	}
 
+	hw->syscon_regmap = syscon_regmap_lookup_by_phandle(pdev->dev.of_node, "starfive,stg-syscon");
+	if (IS_ERR(hw->syscon_regmap)) {
+		dev_err(&pdev->dev, "[hifi4] can't get starfive,stg-syscon.\n");
+		return PTR_ERR(hw->syscon_regmap);
+	}
+
 	hw->core_clk = devm_clk_get(&pdev->dev,"core_clk");
 	if (IS_ERR(hw->core_clk))
 		return -ENODEV;
@@ -270,23 +278,21 @@ void send_irq(void *hw_arg)
 
 void halt(void *hw_arg)
 {
-	//_SET_SYSCON_REG_register76_SCFG_vp6_RunStall(vp6_con_vaddr.noc_base_vp, 1);
 	struct xrp_hw_vic *hw = hw_arg;
 	if (NULL == hw)
 		return;
 
-	SET_U0_HIFI4_RUNSTALL(hw->syscon_regs, 1);
+	regmap_update_bits(hw->syscon_regmap, STG_RUNSTALLADDR_OFFSET, U0_HIFI4_RUNSTALL_MASK, (1 << U0_HIFI4_RUNSTALL_SHIFT));
 	pr_debug("vp6 halt.\n");
 }
 
 void release(void *hw_arg)
 {
-	//_SET_SYSCON_REG_register76_SCFG_vp6_RunStall(vp6_con_vaddr.noc_base_vp, 0);
 	struct xrp_hw_vic *hw = hw_arg;
 	if (NULL == hw)
 		return;
 
-	SET_U0_HIFI4_RUNSTALL(hw->syscon_regs, 0);
+	regmap_update_bits(hw->syscon_regmap, STG_RUNSTALLADDR_OFFSET, U0_HIFI4_RUNSTALL_MASK, (0 << U0_HIFI4_RUNSTALL_SHIFT));
 	pr_debug("vp6 begin run.\n");
 }
 
@@ -296,8 +302,8 @@ void reset(void *hw_arg)
 	if (NULL == hw)
 		return;
 
-	SET_U0_HIFI4_STATVECTORSEL(hw->syscon_regs, 1);
-	SET_U0_HIFI4_ALTRESETVEC(hw->syscon_regs, 0xf0000000);
+	regmap_update_bits(hw->syscon_regmap, STG_STATVECTORSELADDR_OFFSET, U0_HIFI4_STATVECTORSEL_MASK, (1 << U0_HIFI4_STATVECTORSEL_SHIFT));
+	regmap_update_bits(hw->syscon_regmap, STG_ALTRESETVECADDR_OFFSET, U0_HIFI4_ALTRESETVEC_MASK, 0xf0000000);
 
 	clk_prepare_enable(hw->core_clk);
 
