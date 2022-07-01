@@ -1,11 +1,10 @@
 --- arch/riscv/boot/dts/starfive/jh7110.dtsi
 +++ arch/riscv/boot/dts/starfive/jh7110.dtsi
-@@ -282,7 +282,7 @@ clkisp: clock-controller@19810000 {
+@@ -284,6 +286,7 @@ clkisp: clock-controller@19810000 {
  				 <&rstgen RSTN_U0_NOC_BUS_ISP_AXI_N>;
  			reset-names = "rst_isp_top_n", "rst_isp_top_axi",
  				      "rst_isp_noc_bus_n";
--			status = "disabled";
-+			status = "okay";
++			power-domains = <&pwrc JH7110_PD_ISP>;
+ 			status = "okay";
  		};
  
- 		qspi: spi@13010000 {
