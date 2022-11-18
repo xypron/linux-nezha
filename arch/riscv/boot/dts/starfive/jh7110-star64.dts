@@ -150,9 +150,10 @@
 	#size-cells = <0>;
 	status = "okay";
 	phy0: ethernet-phy@0 {
-		rxc_dly_en = <0>;
+		rxc_dly_en = <1>;
 		tx_delay_sel_fe = <5>;
-		tx_delay_sel = <9>;
+		tx_delay_sel = <12>;
+		rx_delay_sel = <1>;
 	};
 };
 
